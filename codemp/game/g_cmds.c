@@ -2322,11 +2322,6 @@ static void Cmd_VoiceCommand_f(gentity_t *ent)
 	char *s;
 	int i = 0;
 
-	if (level.gametype < GT_TEAM)
-	{
-		return;
-	}
-
 	if (trap->Argc() < 2)
 	{
 		return;
