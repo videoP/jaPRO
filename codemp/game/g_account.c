@@ -2393,50 +2393,38 @@ void Cmd_ACWhois_f( gentity_t *ent ) { //why does this crash sometimes..? condit
 	int			i;
 	char		msg[1024-128] = {0};
 	gclient_t	*cl;
-	qboolean	whois = qfalse, seeip = qfalse;
+	qboolean	seeip = qfalse;
 	sqlite3 * db;
     char * sql;
     sqlite3_stmt * stmt;
 	int s;
 
 	if (ent->client->sess.fullAdmin) {//Logged in as full admin
-		if (g_fullAdminLevel.integer & (1 << A_WHOIS))
-			whois = qtrue;
 		if (g_fullAdminLevel.integer & (1 << A_SEEIP))
 			seeip = qtrue;
 	}
-	else if (ent->client->sess.juniorAdmin) {//Logged in as junior admin
-		if (g_juniorAdminLevel.integer & (1 << A_WHOIS))
-			whois = qtrue;
+	else if (ent->client->sess.juniorAdmin) {//Logged in as junior admin;
 		if (g_juniorAdminLevel.integer & (1 << A_SEEIP))
 			seeip = qtrue;
 	}
 	
 	//A_STATUS
 
-	if (whois) {
-		CALL_SQLITE (open (LOCAL_DB_PATH, & db));
-		sql = "SELECT username FROM LocalAccount WHERE lastip = ?";
-		CALL_SQLITE (prepare_v2 (db, sql, strlen (sql) + 1, & stmt, NULL));
-	}
+	CALL_SQLITE (open (LOCAL_DB_PATH, & db));
+	sql = "SELECT username FROM LocalAccount WHERE lastip = ?";
+	CALL_SQLITE (prepare_v2 (db, sql, strlen (sql) + 1, & stmt, NULL));
 
-	if (whois && seeip) {
+	if (seeip) {
 		if (g_raceMode.integer)
 			trap->SendServerCommand(ent-g_entities, "print \"^5   Username            IP                Plugin  Admin  Race  Style    Jump  Hidden  Nickame\n\"");
 		else
 			trap->SendServerCommand(ent-g_entities, "print \"^5   Username            IP                Plugin  Admin  Nickname\n\"");
 	}
-	else if (whois) {
+	else {
 		if (g_raceMode.integer)
 			trap->SendServerCommand(ent-g_entities, "print \"^5   Username            Plugin  Admin  Race  Style    Jump  Hidden  Nickame\n\"");
 		else
 			trap->SendServerCommand(ent-g_entities, "print \"^5   Username            Plugin  Admin  Nickname\n\"");
-	}
-	else {
-		if (g_raceMode.integer)
-			trap->SendServerCommand(ent-g_entities, "print \"^5   Username            Plugin  Race  Style    Jump  Hidden  Nickname\n\"");
-		else
-			trap->SendServerCommand(ent-g_entities, "print \"^5   Username            Plugin  Nickname\n\"");
 	}
 
 	for (i=0; i<MAX_CLIENTS; i++) {//Build a list of clients
@@ -2465,19 +2453,16 @@ void Cmd_ACWhois_f( gentity_t *ent ) { //why does this crash sometimes..? condit
 			if (cl->sess.sessionTeam != TEAM_SPECTATOR)
 				Q_strncpyz(jumpLevel, va("%i", cl->ps.fd.forcePowerLevel[FP_LEVITATION]), sizeof(jumpLevel));
 
-			if (whois || seeip) {
-				p = strchr(strIP, ':');
-				if (p) //loda - fix ip sometimes not printing in amstatus?
-					*p = 0;
-			}
-			if (whois) {
-				if (cl->sess.fullAdmin)
-					Q_strncpyz( strAdmin, "^3Full^7", sizeof(strAdmin));
-				else if (cl->sess.juniorAdmin)
-					Q_strncpyz(strAdmin, "^3Junior^7", sizeof(strAdmin));
-				else
-					Q_strncpyz(strAdmin, "^7None^7", sizeof(strAdmin));
-			}
+			p = strchr(strIP, ':');
+			if (p) //loda - fix ip sometimes not printing in amstatus?
+				*p = 0;
+
+			if (cl->sess.fullAdmin)
+				Q_strncpyz( strAdmin, "^3Full^7", sizeof(strAdmin));
+			else if (cl->sess.juniorAdmin)
+				Q_strncpyz(strAdmin, "^3Junior^7", sizeof(strAdmin));
+			else
+				Q_strncpyz(strAdmin, "^7None^7", sizeof(strAdmin));
 
 			if (g_raceMode.integer) {
 				if (cl->sess.sessionTeam == TEAM_SPECTATOR) {
@@ -2520,52 +2505,45 @@ void Cmd_ACWhois_f( gentity_t *ent ) { //why does this crash sometimes..? condit
 			else
 				Q_strncpyz(strPlugin, (cl->pers.isJAPRO) ? "^2Yes^7" : "^1No^7", sizeof(strPlugin));
 
-			if (whois) { //No username means not logged in, so check if they have an account tied to their ip
-				if (!cl->pers.userName[0]) {
-					unsigned int ip;
+			//No username means not logged in, so check if they have an account tied to their ip
+			if (!cl->pers.userName[0]) {
+				unsigned int ip;
 
-					ip = ip_to_int(strIP);
+				ip = ip_to_int(strIP);
 
-					CALL_SQLITE (bind_int64 (stmt, 1, ip));
+				CALL_SQLITE (bind_int64 (stmt, 1, ip));
 
-					s = sqlite3_step(stmt);
+				s = sqlite3_step(stmt);
 
-					if (s == SQLITE_ROW) {
-						if (ip)
-							//Q_strncpyz(strUser, (char*)sqlite3_column_text(stmt, 0), sizeof(strUser));
-							Com_sprintf(strUser, sizeof(strUser), "^3%s^7", (char*)sqlite3_column_text(stmt, 0));
-					}
-					else if (s != SQLITE_DONE) {
-						fprintf (stderr, "ERROR: SQL Select Failed.\n");//trap print?
-						CALL_SQLITE (finalize(stmt));
-						CALL_SQLITE (close(db));
-						return;
-					}
-
-					CALL_SQLITE (reset (stmt));
-					CALL_SQLITE (clear_bindings (stmt));
+				if (s == SQLITE_ROW) {
+					if (ip)
+						//Q_strncpyz(strUser, (char*)sqlite3_column_text(stmt, 0), sizeof(strUser));
+						Com_sprintf(strUser, sizeof(strUser), "^3%s^7", (char*)sqlite3_column_text(stmt, 0));
+				}
+				else if (s != SQLITE_DONE) {
+					fprintf (stderr, "ERROR: SQL Select Failed.\n");//trap print?
+					CALL_SQLITE (finalize(stmt));
+					CALL_SQLITE (close(db));
+					return;
 				}
 
-				if (seeip) {
-					//Admin prints
-					if (g_raceMode.integer)
-						tmpMsg = va( "%-2s%-24s%-18s%-12s%-11s%-10s%-13s%-6s%-12s%s\n", strNum, strUser, strIP, strPlugin, strAdmin, strRace, strStyle, jumpLevel, strHidden, strName);
-					else
-						tmpMsg = va( "%-2s%-24s%-18s%-12s%-11s%s\n", strNum, strUser, strIP, strPlugin, strAdmin, strName);
-				}
-				else {
-					//Admin prints
-					if (g_raceMode.integer)
-						tmpMsg = va( "%-2s%-24s%-12s%-11s%-10s%-13s%-6s%-12s%s\n", strNum, strUser, strPlugin, strAdmin, strRace, strStyle, jumpLevel, strHidden, strName);
-					else
-						tmpMsg = va( "%-2s%-24s%-12s%-11s%s\n", strNum, strUser, strPlugin, strAdmin, strName);
-				}
+				CALL_SQLITE (reset (stmt));
+				CALL_SQLITE (clear_bindings (stmt));
 			}
-			else {//Not admin
+
+			if (seeip) {
+				//Admin prints
 				if (g_raceMode.integer)
-					tmpMsg = va( "%-2s%-24s%-12s%-10s%-13s%-6s%-12s%s\n", strNum, strUser, strPlugin, strRace, strStyle, jumpLevel, strHidden, strName);
+					tmpMsg = va( "%-2s%-24s%-18s%-12s%-11s%-10s%-13s%-6s%-12s%s\n", strNum, strUser, strIP, strPlugin, strAdmin, strRace, strStyle, jumpLevel, strHidden, strName);
 				else
-					tmpMsg = va( "%-2s%-24s%-12s%s\n", strNum, strUser, strPlugin, strName);
+					tmpMsg = va( "%-2s%-24s%-18s%-12s%-11s%s\n", strNum, strUser, strIP, strPlugin, strAdmin, strName);
+			}
+			else {
+				//Admin prints
+				if (g_raceMode.integer)
+					tmpMsg = va( "%-2s%-24s%-12s%-11s%-10s%-13s%-6s%-12s%s\n", strNum, strUser, strPlugin, strAdmin, strRace, strStyle, jumpLevel, strHidden, strName);
+				else
+					tmpMsg = va( "%-2s%-24s%-12s%-11s%s\n", strNum, strUser, strPlugin, strAdmin, strName);
 			}
 			
 			if (strlen(msg) + strlen(tmpMsg) >= sizeof( msg)) {
@@ -2576,10 +2554,8 @@ void Cmd_ACWhois_f( gentity_t *ent ) { //why does this crash sometimes..? condit
 		}
 	}
 
-	if (whois) {
-		CALL_SQLITE (finalize(stmt));
-		CALL_SQLITE (close(db));
-	}
+	CALL_SQLITE (finalize(stmt));
+	CALL_SQLITE (close(db));
 
 	trap->SendServerCommand(ent-g_entities, va("print \"%s\"", msg));
 
