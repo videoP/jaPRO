@@ -1640,28 +1640,29 @@ Print to the logfile with a time stamp if it is open
 =================
 */
 void QDECL G_LogPrintf( const char *fmt, ... ) {
-  va_list    argptr;
-  char    string[1024] = {0};
-  time_t    rawtime;
-  int      timeLen = 0;
-  struct tm*  local;
+	va_list		argptr;
+	char		string[1024] = {0};
+	time_t		rawtime;
+	int			timeLen = 0;
+	struct tm*	gtime;
 
-  time( &rawtime );
-  local = localtime( &rawtime );
-  strftime( string, sizeof( string ), "[%Y-%m-%d] [%H:%M:%S] ", asctime( local ) );
-  timeLen = strlen( string );
+	time( &rawtime );
+	localtime( &rawtime );
+	gtime = gmtime( &rawtime );
+	strftime( string, sizeof( string ), "[%Y-%m-%d] [%H:%M:%S] ", gtime );
+	timeLen = strlen( string );
 
-  va_start( argptr, fmt );
-  Q_vsnprintf( string+timeLen, sizeof( string ) - timeLen, fmt, argptr );
-  va_end( argptr );
+	va_start( argptr, fmt );
+	Q_vsnprintf( string+timeLen, sizeof( string ) - timeLen, fmt, argptr );
+	va_end( argptr );
 
-  if ( dedicated.integer )
-  trap->Print( "%s", string + timeLen );
+	if ( dedicated.integer )
+	trap->Print( "%s", string + timeLen );
 
-  if ( !level.logFile )
-  return;
+	if ( !level.logFile )
+	return;
 
-  trap->FS_Write( string, strlen( string ), level.logFile );
+	trap->FS_Write( string, strlen( string ), level.logFile );
 }
 /*
 =================
