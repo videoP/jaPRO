@@ -5794,8 +5794,8 @@ void Cmd_DFRecent_f(gentity_t *ent) {
 
 	if (page < 1)
 		page = 1;
-	if (page > 1000)
-		page = 1000;
+	if (page > 10000000)
+		page = 10000000;
 	start = (page - 1) * 10;
 
 	{

@@ -8372,6 +8372,7 @@ void Cmd_DuelTop10_f( gentity_t *ent );
 #endif
 void Cmd_CreateTeam_f( gentity_t *ent );
 void Cmd_JoinTeam_f( gentity_t *ent );
+void Cmd_LeaveTeam_f(gentity_t* ent);
 void Cmd_ListTeam_f( gentity_t *ent );
 void Cmd_InviteTeam_f( gentity_t *ent );
 void Cmd_InfoTeam_f( gentity_t *ent );
@@ -8451,6 +8452,7 @@ command_t commands[] = {
 	{ "claninfo",			Cmd_InfoTeam_f,				CMD_NOINTERMISSION },
 	{ "claninvite",			Cmd_InviteTeam_f,			CMD_NOINTERMISSION },
 	{ "clanjoin",			Cmd_JoinTeam_f,				CMD_NOINTERMISSION },
+	{ "clanleave",			Cmd_LeaveTeam_f,			CMD_NOINTERMISSION },
 	{ "clanlist",			Cmd_ListTeam_f,				CMD_NOINTERMISSION },
 
 	{ "clanpass",			Cmd_Clanpass_f,				CMD_NOINTERMISSION },
