@@ -1269,7 +1269,7 @@ qboolean ValidRaceSettings(int restrictions, gentity_t *player)
 			return qfalse;
 		}
 	}
-	if (player->client->pers.noFollow && player->client->sess.movementStyle != MV_SIEGE)
+	if (player->client->pers.noFollow && player->client->sess.movementStyle != MV_SIEGE && g_allowNoFollow.integer < 3)
 		return qfalse;
 	if (player->client->pers.practice)
 		return qfalse;
@@ -1542,7 +1542,7 @@ void TimerStart(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO 
 			//Floodprotect the prints
 			if (!player->client->pers.userName[0]) //In racemode but not logged in
 				trap->SendServerCommand(player-g_entities, "cp \"^3Warning: You are not logged in!\n\n\n\n\n\n\n\n\n\n\"");
-			else if (player->client->pers.noFollow && player->client->sess.movementStyle != MV_SIEGE)
+			else if (player->client->pers.noFollow && player->client->sess.movementStyle != MV_SIEGE && g_allowNoFollow.integer < 3)
 				trap->SendServerCommand( player-g_entities, "cp \"^3Warning: times are not valid while hidden!\n\n\n\n\n\n\n\n\n\n\""); //Since times wont be saved if they arnt logged in anyway
 			else if (player->client->pers.practice)
 				trap->SendServerCommand( player-g_entities, "cp \"^3Warning: times are not valid in practice mode!\n\n\n\n\n\n\n\n\n\n\""); //Since times wont be saved if they arnt logged in anyway
