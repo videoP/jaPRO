@@ -3971,14 +3971,13 @@ void Cmd_ListMasters_f(gentity_t *ent) {
 		sqlite3_stmt * stmt;
 		int s, row = 1;
 		char msg[1024 - 128] = { 0 }, mastername[16] = { 0 };
-		qboolean printed = qfalse;
 
 		CALL_SQLITE(open(LOCAL_DB_PATH, &db));
 
 		sql = "SELECT T1.master, T1.username FROM "
 			"(SELECT master, username FROM LocalAccount WHERE master IS NOT NULL) AS T1 "
 			"INNER JOIN(SELECT master, COUNT(*) AS count FROM LocalAccount WHERE master IS NOT NULL GROUP BY master) AS T2 "
-			"ON T1.master = T2.master ORDER BY T2.count DESC LIMIT ?, 10"; //Order by score - OH BOY! Or by member count?
+			"ON T1.master = T2.master ORDER BY T2.count DESC, T1.master DESC LIMIT ?, 10"; //Order by score - OH BOY! Or by member count?
 		CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 		CALL_SQLITE(bind_int(stmt, 1, start));
 
@@ -3995,7 +3994,6 @@ void Cmd_ListMasters_f(gentity_t *ent) {
 				else { //New master
 					Q_strncpyz(mastername, (char*)sqlite3_column_text(stmt, 0), sizeof(mastername)); //Store new master
 					tmpMsg = va("\n^5%2i^3: ^3%-18s %s ", start + row, mastername, sqlite3_column_text(stmt, 1)); ///Append newline master and padawan
-					printed = qtrue;
 					row++;
 				}
 
@@ -4017,9 +4015,7 @@ void Cmd_ListMasters_f(gentity_t *ent) {
 			}
 		}
 
-		if (printed) {
-			trap->SendServerCommand(ent - g_entities, va("print \"%s\n\"", msg));
-		}
+		trap->SendServerCommand(ent - g_entities, va("print \"%s\n\"", msg));
 
 		CALL_SQLITE(finalize(stmt));
 		CALL_SQLITE(close(db));

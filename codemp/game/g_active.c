@@ -5924,7 +5924,7 @@ void G_RunClient( gentity_t *ent ) {
 	// force client updates if they're not sending packets at roughly 4hz
 
 	if (ent->client->pers.recordingDemo) { //(ent->client->ps.pm_flags & PMF_FOLLOW) ?
-		if ((ent->client->pers.noFollow && ent->client->sess.movementStyle != MV_SIEGE) || ent->client->pers.practice || sv_cheats.integer || !ent->client->pers.userName[0] || !ent->client->sess.raceMode || !ent->client->pers.stats.startTime || (ent->client->sess.sessionTeam == TEAM_SPECTATOR) ||
+		if ((ent->client->pers.noFollow && (ent->client->sess.movementStyle != MV_SIEGE) && (g_allowNoFollow.integer < 3)) || ent->client->pers.practice || sv_cheats.integer || !ent->client->pers.userName[0] || !ent->client->sess.raceMode || !ent->client->pers.stats.startTime || (ent->client->sess.sessionTeam == TEAM_SPECTATOR) ||
 			((ent->client->lastHereTime < level.time - 30000) && (level.time - ent->client->pers.demoStoppedTime > 10000)) ||
 			(trap->Milliseconds() - ent->client->pers.stats.startTime > 240*60*1000)) // just give up on races longer than 4 hours lmao
 		{

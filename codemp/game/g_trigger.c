@@ -1269,7 +1269,7 @@ qboolean ValidRaceSettings(int restrictions, gentity_t *player)
 			return qfalse;
 		}
 	}
-	if (player->client->pers.noFollow && player->client->sess.movementStyle != MV_SIEGE && g_allowNoFollow.integer < 3)
+	if (player->client->pers.noFollow && (player->client->sess.movementStyle != MV_SIEGE) && (g_allowNoFollow.integer < 3))
 		return qfalse;
 	if (player->client->pers.practice)
 		return qfalse;
@@ -1396,7 +1396,7 @@ void TimerStart(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO 
 
 	//in rename demo, also make sure demo is stopped before renaming? that way we dont have to have the ;wait 20; here
 
-	if ((sv_autoRaceDemo.integer) && (!player->client->pers.noFollow || player->client->sess.movementStyle == MV_SIEGE) && !(player->client->pers.practice) && player->client->sess.raceMode && !sv_cheats.integer && player->client->pers.userName[0]) {
+	if ((sv_autoRaceDemo.integer) && (!player->client->pers.noFollow || (player->client->sess.movementStyle == MV_SIEGE) || (g_allowNoFollow.integer > 2)) && !(player->client->pers.practice) && player->client->sess.raceMode && !sv_cheats.integer && player->client->pers.userName[0]) {
 		if (!player->client->pers.recordingDemo) { //Start the new demo
 			player->client->pers.recordingDemo = qtrue;
 			//trap->SendServerCommand( player-g_entities, "chat \"RECORDING STARTED\"");
