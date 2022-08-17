@@ -4578,6 +4578,10 @@ qboolean TryGrapple(gentity_t *ent)
 
 void Cmd_TargetUse_f( gentity_t *ent )
 {
+	if (!G_AdminAllowed(ent, JAPRO_ACCOUNTFLAG_A_NOCLIP, qtrue, 0, "t_use")) {
+		return;
+	}
+
 	if ( trap->Argc() > 1 )
 	{
 		char sArg[MAX_STRING_CHARS] = {0};
@@ -8574,7 +8578,7 @@ command_t commands[] = {
 	{ "top",				Cmd_DuelTop10_f,			CMD_NOINTERMISSION },
 #endif
 
-	{ "t_use",				Cmd_TargetUse_f,			CMD_CHEAT|CMD_ALIVE },
+	{ "t_use",				Cmd_TargetUse_f,			CMD_NOINTERMISSION|CMD_ALIVE },
 	{ "vgs_cmd",			Cmd_VGSCommand_f,			CMD_NOINTERMISSION },//vgs
 	{ "voice_cmd",			Cmd_VoiceCommand_f,			0 },
 	{ "vote",				Cmd_Vote_f,					CMD_NOINTERMISSION },
