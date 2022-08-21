@@ -1436,6 +1436,15 @@ void TimerStart(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO 
 		hVel[2] = 0;
 		VectorScale(player->client->ps.velocity, (trigger->speed * (player->client->ps.basespeed / 250.0f)) / VectorLength(hVel), player->client->ps.velocity);
 	}
+	else if (trigger->spawnflags & 2) {//set speed to speed value, keep our direction the same
+		vec3_t hVel;
+		hVel[0] = player->client->ps.velocity[0];
+		hVel[1] = player->client->ps.velocity[1];
+		hVel[2] = 0;
+		if (VectorLength(hVel) > trigger->speed) {
+			VectorScale(player->client->ps.velocity, (trigger->speed * (player->client->ps.basespeed / 250.0f)) / VectorLength(hVel), player->client->ps.velocity);
+		}
+	}
 
 	player->client->pers.startLag = GetTimeMS() - level.frameStartTime + level.time - player->client->pers.cmd.serverTime; //use level.previousTime?
 	//trap->SendServerCommand( player-g_entities, va("chat \"startlag: %i\"", player->client->pers.startLag));
