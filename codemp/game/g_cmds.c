@@ -4578,10 +4578,6 @@ qboolean TryGrapple(gentity_t *ent)
 
 void Cmd_TargetUse_f( gentity_t *ent )
 {
-	if (!G_AdminAllowed(ent, JAPRO_ACCOUNTFLAG_A_NOCLIP, qtrue, 0, "t_use")) {
-		return;
-	}
-
 	if ( trap->Argc() > 1 )
 	{
 		char sArg[MAX_STRING_CHARS] = {0};
@@ -5797,6 +5793,8 @@ void Cmd_Aminfo_f(gentity_t *ent)
 			Q_strcat(buf, sizeof(buf), "amVstr "); 
 		if (G_AdminAllowed(ent, JAPRO_ACCOUNTFLAG_A_RENAME, qfalse, qfalse, NULL))
 			Q_strcat(buf, sizeof(buf), "amRename "); 
+		if (G_AdminAllowed(ent, JAPRO_ACCOUNTFLAG_ENTITY, qfalse, qfalse, NULL))
+			Q_strcat(buf, sizeof(buf), "trace nearby ");
 		trap->SendServerCommand(ent-g_entities, va("print \"%s\n\"", buf));
 		buf[0] = '\0';
 	}
@@ -7553,6 +7551,117 @@ void Cmd_Nudge_f(gentity_t *ent)//JAPRO - test entity nudge cmd
 	}
 }
 
+#if 1
+void Cmd_Nearby_f(gentity_t* ent) {
+	int i = 128, count;
+	char buf[MAX_STRING_CHARS] = { 0 };
+	gentity_t* ent_list[MAX_GENTITIES];
+	char search[MAX_STRING_CHARS] = { 0 };
+
+	if (!G_AdminAllowed(ent, JAPRO_ACCOUNTFLAG_ENTITY, qtrue, 0, "nearby")) {
+		return;
+	}
+
+	trap->Argv(1, buf, sizeof(buf));
+
+	if (buf[0])
+		i = atoi(buf);
+	if (trap->Argc() >= 3) {
+		trap->Argv(2, search, sizeof(search));
+	}
+
+	count = G_RadiusList(ent->r.currentOrigin, i, ent, qfalse, ent_list);
+	for (i = 0; i < count; i++) {
+		if (search[0]) {
+			if (Q_stricmpn(ent_list[i]->classname, search, strlen(search)) != 0)
+				continue;
+		}
+		trap->SendServerCommand(ent - g_entities, va("print \"^2%i ^3(^2%.00f %.00f %.00f^3) ^3%s\n\"", ent_list[i]->s.number, ent_list[i]->s.origin[0], ent_list[i]->s.origin[1], ent_list[i]->s.origin[2], ent_list[i]->classname));
+		if (i == 75) {
+			trap->SendServerCommand(ent - g_entities, "print \"^3Only the first 75 entites were displayed.\n\"");
+			break;
+		}
+	}
+}
+
+gentity_t* AimAnyTarget(gentity_t* ent, int length) {
+	trace_t tr;
+	vec3_t fPos, maxs, mins, start;
+
+	AngleVectors(ent->client->ps.viewangles, fPos, 0, 0);
+	VectorSet(mins, -8, -8, -8);
+	VectorSet(maxs, 8, 8, 8);
+
+	start[0] = ent->client->ps.origin[0];
+	start[1] = ent->client->ps.origin[1];
+	start[2] = ent->client->ps.origin[2] + ent->client->ps.viewheight;
+
+	fPos[0] = start[0] + fPos[0] * length;
+	fPos[1] = start[1] + fPos[1] * length;
+	fPos[2] = start[2] + fPos[2] * length;
+
+	trap->Trace(&tr, start, mins, maxs, fPos, ent->s.number, ent->clipmask, qfalse, 0, 0);
+	if (tr.entityNum >= ENTITYNUM_MAX_NORMAL) {
+		return NULL;
+	}
+	return &g_entities[tr.entityNum];
+}
+
+void Cmd_Trace_f(gentity_t* ent) {
+	gentity_t* tEnt;
+	char buf[MAX_STRING_CHARS - 64] = { 0 };
+
+	if (!G_AdminAllowed(ent, JAPRO_ACCOUNTFLAG_ENTITY, qtrue, 0, "trace")) {
+		return;
+	}
+
+	/*
+	if (trap_Argc() > 1) {
+		int entnr;
+		char arg[16];
+		trap_Argv(1, arg, sizeof(arg));
+		entnr = atoi(arg);
+		if (entnr == 0 && !(arg[0] == '0' && arg[1] == 0)) {
+			trap->SendServerCommand(ent - g_entities, "print \"^3Invalid entity number.\n\"");
+			return;
+		}
+		tEnt = GetEnt(entnr);
+	}
+	else */{
+		vec3_t start;
+		if (!ent)
+			return;
+
+		start[0] = ent->client->ps.origin[0];
+		start[1] = ent->client->ps.origin[1];
+		start[2] = ent->client->ps.origin[2] + ent->client->ps.viewheight;
+
+		G_PlayEffectID(G_EffectIndex("env/beam"), start, ent->client->ps.viewangles);
+		tEnt = AimAnyTarget(ent, 8192);
+	}
+	if (!tEnt || !tEnt->inuse) {
+		trap->SendServerCommand(ent - g_entities, "print \"^3Entity not found.\n\"");
+		return;
+	}
+
+	Q_strncpyz(buf, va("^5Entity ^3%i ^5info:\n", tEnt->s.number), sizeof(buf));
+	Q_strcat(buf, sizeof(buf), va("   ^5Classname^3: ^2%s\n", tEnt->classname));
+	if (tEnt->targetname && tEnt->targetname[0])
+		Q_strcat(buf, sizeof(buf), va("   ^5Targetname^3: ^2%s\n", tEnt->targetname));
+	if (tEnt->target && tEnt->target[0]) {
+		Q_strcat(buf, sizeof(buf), va("   ^5Target^3: ^2%s\n", tEnt->target));
+	}
+	Q_strcat(buf, sizeof(buf), va("   ^5Spawnflags^3: ^2%i\n", tEnt->spawnflags));
+	Q_strcat(buf, sizeof(buf), va("   ^5Constant origin^3: (^2%.00f %.00f %.00f^3)\n", tEnt->s.origin[0], tEnt->s.origin[1], tEnt->s.origin[2]));
+	Q_strcat(buf, sizeof(buf), va("   ^5Constant angles^3: (^2%.00f %.00f %.00f^3)\n", tEnt->s.angles[0], tEnt->s.angles[1], tEnt->s.angles[2]));
+	if (tEnt->model) {
+		Q_strcat(buf, sizeof(buf), va("   ^5Model^3: ^2%s\n", tEnt->model));
+	}
+
+	trap->SendServerCommand(ent - g_entities, va("print \"%s\"", buf));
+}
+#endif
+
 //Save ents
 /*
 For each entity, if not func_static, continue
@@ -8383,6 +8492,8 @@ void Cmd_InfoTeam_f( gentity_t *ent );
 void Cmd_AdminTeam_f( gentity_t *ent );
 void Cmd_ListMasters_f(gentity_t *ent);
 void Cmd_AddMaster_f(gentity_t *ent);
+void Cmd_Trace_f(gentity_t* ent);
+void Cmd_Nearby_f(gentity_t* ent);
 
 /* This array MUST be sorted correctly by alphabetical name field */
 command_t commands[] = {
@@ -8521,6 +8632,9 @@ command_t commands[] = {
 
 	{ "modversion",			Cmd_ModVersion_f,			0 },
 	{ "move",				Cmd_MovementStyle_f,		CMD_NOINTERMISSION},
+
+	{ "nearby",				Cmd_Nearby_f,				CMD_NOINTERMISSION },
+
 	{ "noclip",				Cmd_Noclip_f,				CMD_NOINTERMISSION },//change for admin?
 	{ "notarget",			Cmd_Notarget_f,				CMD_CHEAT|CMD_ALIVE|CMD_NOINTERMISSION },
 
@@ -8577,8 +8691,10 @@ command_t commands[] = {
 #if _ELORANKING
 	{ "top",				Cmd_DuelTop10_f,			CMD_NOINTERMISSION },
 #endif
+	{ "trace",				Cmd_Trace_f,				CMD_NOINTERMISSION },
 
-	{ "t_use",				Cmd_TargetUse_f,			CMD_NOINTERMISSION|CMD_ALIVE },
+
+	{ "t_use",				Cmd_TargetUse_f,			CMD_CHEAT|CMD_NOINTERMISSION|CMD_ALIVE },
 	{ "vgs_cmd",			Cmd_VGSCommand_f,			CMD_NOINTERMISSION },//vgs
 	{ "voice_cmd",			Cmd_VoiceCommand_f,			0 },
 	{ "vote",				Cmd_Vote_f,					CMD_NOINTERMISSION },

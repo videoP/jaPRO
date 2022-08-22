@@ -2759,7 +2759,8 @@ static bitInfo_T accountFlags[] = {
 	{"Trusted"},//24
 	{"No Race"},//25
 	{"No Duel"},//26
-	{"All Cosmetics"}//27
+	{"All Cosmetics"},//27
+	{"Entities"}//27
 };
 static const int MAX_ACCOUNT_FLAGS = ARRAY_LEN( accountFlags );
 
@@ -2828,8 +2829,8 @@ void Svcmd_FlagAccount_f( void ) {
 			index = atoi( arg );
 
 			//DM Start: New -1 toggle all options.
-			if (index < -1 || index >= MAX_ACCOUNT_FLAGS) {  //Whereas we need to allow -1 now, we must change the limit for this value.
-				trap->Print("flagAccount: Invalid range: %i [0-%i, or -1 for toggle all]\n", index, MAX_ACCOUNT_FLAGS - 1);
+			if (index < 0 || index >= MAX_ACCOUNT_FLAGS) {  //Whereas we need to allow -1 now, we must change the limit for this value.
+				trap->Print("flagAccount: Invalid range: %i [0-%i]\n", index, MAX_ACCOUNT_FLAGS - 1);
 				CALL_SQLITE (close(db));
 				return;
 			}

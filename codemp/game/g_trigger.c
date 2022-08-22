@@ -1893,7 +1893,7 @@ void Use_target_restrict_on(gentity_t *trigger, gentity_t *other, gentity_t *pla
 			G_Sound(player, CHAN_AUTO, G_SoundIndex("sound/player/boon.mp3"));
 		player->client->ps.powerups[PW_YSALAMIRI] = 2147483648 - 1;// Q3_INFINITE;
 	}
-	if (trigger->spawnflags & RESTRICT_FLAG_CROUCHJUMP) {//hl style crouch jump
+	if (trigger->spawnflags & RESTRICT_FLAG_CROUCHJUMP) {//hl style crouch jump	
 		player->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_CROUCHJUMP;
 	}
 	if (trigger->spawnflags & RESTRICT_FLAG_ALLOWTELES) {
