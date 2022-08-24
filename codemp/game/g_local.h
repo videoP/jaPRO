@@ -328,6 +328,7 @@ extern int dueltypes[MAX_CLIENTS];//JAPRO - Serverside - Fullforce Duels y is th
 #define RESTRICT_FLAG_CROUCHJUMP (1<<6)
 #define RESTRICT_FLAG_DOUBLEJUMP (1<<7)
 #define RESTRICT_FLAG_ALLOWTELES (1<<8)
+#define RESTRICT_FLAG_RESET (1<<9)
 
 //JAPRO - Serverside - Unlagged bitvalues
 #define UNLAGGED_PROJ_NUDGE	(1<<0)
