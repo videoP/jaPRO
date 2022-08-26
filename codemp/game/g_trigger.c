@@ -1903,7 +1903,7 @@ void Use_target_restrict_on(gentity_t *trigger, gentity_t *other, gentity_t *pla
 		player->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_BHOP;
 	}
 
-	if (trigger->spawnflags & RESTRICT_FLAG_RESET) {
+	if (player->client->pers.stats.startTime && trigger->spawnflags & RESTRICT_FLAG_RESET) {
 		player->client->pers.stats.startTime = 0;
 		if (player->client->sess.raceMode)
 			player->client->ps.duelTime = 0;
