@@ -251,6 +251,15 @@ void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles, int speed)
 		player->client->ps.powerups[PW_FORCE_BOON] = 0;
 		if (player->client->sess.movementStyle == MV_RJQ3 || player->client->sess.movementStyle == MV_RJCPM) //Get rid of their rockets when they tele/noclip..?
 			DeletePlayerProjectiles(player);
+		if (player->client->sess.movementStyle == MV_COOP_JKA && player->client->ps.duelInProgress) { //clean this up..
+			gentity_t* gripEnt;
+			WP_ForcePowerStop(player, FP_GRIP);
+
+			gripEnt = &g_entities[player->client->ps.duelIndex];
+			if (gripEnt && gripEnt->client) {
+				WP_ForcePowerStop(gripEnt, FP_GRIP);
+			}
+		}
 	}
 }
 

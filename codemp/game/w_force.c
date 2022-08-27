@@ -4169,8 +4169,13 @@ void DoGripAction(gentity_t *self, forcePowers_t forcePower)
 
 	if (VectorLength(a) > MAX_GRIP_DISTANCE)
 	{
-		WP_ForcePowerStop(self, forcePower);
-		return;
+		if (self && self->client->sess.movementStyle == MV_COOP_JKA) {
+			//dont break grips due to distance in coop
+		}
+		else {
+			WP_ForcePowerStop(self, forcePower);
+			return;
+		}
 	}
 
 	if ( !InFront( gripEnt->client->ps.origin, self->client->ps.origin, self->client->ps.viewangles, 0.9f ) &&
@@ -4316,13 +4321,24 @@ void DoGripAction(gentity_t *self, forcePowers_t forcePower)
 			}
 			else
 			{
-				VectorNormalize(nvel);
-				gripEnt->client->ps.velocity[0] = nvel[0]*700;
-				gripEnt->client->ps.velocity[1] = nvel[1]*700;
-				gripEnt->client->ps.velocity[2] = nvel[2]*700;
+				if (gripEnt->client->sess.movementStyle == MV_COOP_JKA) {
+					VectorNormalize(nvel);
+					gripEnt->client->ps.velocity[0] = nvel[0] * 1600;
+					gripEnt->client->ps.velocity[1] = nvel[1] * 1600;
+					gripEnt->client->ps.velocity[2] = nvel[2] * 1600;
+				}
+				else {
+					VectorNormalize(nvel);
+					gripEnt->client->ps.velocity[0] = nvel[0] * 700;
+					gripEnt->client->ps.velocity[1] = nvel[1] * 700;
+					gripEnt->client->ps.velocity[2] = nvel[2] * 700;
+				}
 			}
 
-			gripEnt->client->ps.forceGripMoveInterval = level.time + 300; //only update velocity every 300ms, so as to avoid heavy bandwidth usage
+			if (gripEnt->client->sess.movementStyle == MV_COOP_JKA)
+				gripEnt->client->ps.forceGripMoveInterval = level.time + 50; //only update velocity every 300ms, so as to avoid heavy bandwidth usage
+			else
+				gripEnt->client->ps.forceGripMoveInterval = level.time + 300; //only update velocity every 300ms, so as to avoid heavy bandwidth usage
 		}
 
 		if ((level.time - gripEnt->client->ps.fd.forceGripStarted) > 3000 && !self->client->ps.fd.forceGripDamageDebounceTime)
