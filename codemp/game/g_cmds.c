@@ -7615,50 +7615,47 @@ void Cmd_Trace_f(gentity_t* ent) {
 		return;
 	}
 
-	/*
-	if (trap_Argc() > 1) {
-		int entnr;
-		char arg[16];
-		trap_Argv(1, arg, sizeof(arg));
-		entnr = atoi(arg);
-		if (entnr == 0 && !(arg[0] == '0' && arg[1] == 0)) {
-			trap->SendServerCommand(ent - g_entities, "print \"^3Invalid entity number.\n\"");
-			return;
-		}
-		tEnt = GetEnt(entnr);
-	}
-	else */{
-		vec3_t start;
-		if (!ent)
-			return;
+	{
+		trace_t tr;
+		vec3_t fPos, maxs, mins, start;
+
+		AngleVectors(ent->client->ps.viewangles, fPos, 0, 0);
+		VectorSet(mins, -8, -8, -8);
+		VectorSet(maxs, 8, 8, 8);
 
 		start[0] = ent->client->ps.origin[0];
 		start[1] = ent->client->ps.origin[1];
 		start[2] = ent->client->ps.origin[2] + ent->client->ps.viewheight;
 
-		G_PlayEffectID(G_EffectIndex("env/beam"), start, ent->client->ps.viewangles);
-		tEnt = AimAnyTarget(ent, 8192);
-	}
-	if (!tEnt || !tEnt->inuse) {
-		trap->SendServerCommand(ent - g_entities, "print \"^3Entity not found.\n\"");
-		return;
-	}
+		fPos[0] = start[0] + fPos[0] * 8192;
+		fPos[1] = start[1] + fPos[1] * 8192;
+		fPos[2] = start[2] + fPos[2] * 8192;
 
-	Q_strncpyz(buf, va("^5Entity ^3%i ^5info:\n", tEnt->s.number), sizeof(buf));
-	Q_strcat(buf, sizeof(buf), va("   ^5Classname^3: ^2%s\n", tEnt->classname));
-	if (tEnt->targetname && tEnt->targetname[0])
-		Q_strcat(buf, sizeof(buf), va("   ^5Targetname^3: ^2%s\n", tEnt->targetname));
-	if (tEnt->target && tEnt->target[0]) {
-		Q_strcat(buf, sizeof(buf), va("   ^5Target^3: ^2%s\n", tEnt->target));
-	}
-	Q_strcat(buf, sizeof(buf), va("   ^5Spawnflags^3: ^2%i\n", tEnt->spawnflags));
-	Q_strcat(buf, sizeof(buf), va("   ^5Constant origin^3: (^2%.00f %.00f %.00f^3)\n", tEnt->s.origin[0], tEnt->s.origin[1], tEnt->s.origin[2]));
-	Q_strcat(buf, sizeof(buf), va("   ^5Constant angles^3: (^2%.00f %.00f %.00f^3)\n", tEnt->s.angles[0], tEnt->s.angles[1], tEnt->s.angles[2]));
-	if (tEnt->model) {
-		Q_strcat(buf, sizeof(buf), va("   ^5Model^3: ^2%s\n", tEnt->model));
-	}
+		trap->Trace(&tr, start, mins, maxs, fPos, ent->s.number, ent->clipmask, qfalse, 0, 0);
+		tEnt = &g_entities[tr.entityNum];
 
-	trap->SendServerCommand(ent - g_entities, va("print \"%s\"", buf));
+
+		if (tr.fraction != 1 && tr.entityNum != ENTITYNUM_WORLD && tr.entityNum != ENTITYNUM_NONE && tEnt && tEnt->inuse) {
+			Q_strncpyz(buf, va("^5Entity ^3%i ^5info:\n", tEnt->s.number), sizeof(buf));
+			Q_strcat(buf, sizeof(buf), va("   ^5Classname^3: ^2%s\n", tEnt->classname));
+			if (tEnt->targetname && tEnt->targetname[0])
+				Q_strcat(buf, sizeof(buf), va("   ^5Targetname^3: ^2%s\n", tEnt->targetname));
+			if (tEnt->target && tEnt->target[0]) {
+				Q_strcat(buf, sizeof(buf), va("   ^5Target^3: ^2%s\n", tEnt->target));
+			}
+			Q_strcat(buf, sizeof(buf), va("   ^5Spawnflags^3: ^2%i\n", tEnt->spawnflags));
+			Q_strcat(buf, sizeof(buf), va("   ^5Constant origin^3: (^2%.00f %.00f %.00f^3)\n", tEnt->s.origin[0], tEnt->s.origin[1], tEnt->s.origin[2]));
+			Q_strcat(buf, sizeof(buf), va("   ^5Constant angles^3: (^2%.00f %.00f %.00f^3)\n", tEnt->s.angles[0], tEnt->s.angles[1], tEnt->s.angles[2]));
+			if (tEnt->model) {
+				Q_strcat(buf, sizeof(buf), va("   ^5Model^3: ^2%s\n", tEnt->model));
+			}
+
+			trap->SendServerCommand(ent - g_entities, va("print \"%s\"", buf));
+		}
+		else {
+			trap->SendServerCommand(ent - g_entities, va("print \"^3Entity not found. Endpoint: (^2%.00f %.00f %.00f^3)\n\"", tr.endpos[0], tr.endpos[1], tr.endpos[2]));
+		}
+	}
 }
 #endif
 
