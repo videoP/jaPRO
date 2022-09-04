@@ -1451,7 +1451,7 @@ void TimerStart(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO 
 		hVel[0] = player->client->ps.velocity[0];
 		hVel[1] = player->client->ps.velocity[1];
 		hVel[2] = 0;
-		if (VectorLength(hVel) > trigger->speed) {
+		if (VectorLength(hVel) > (trigger->speed * (player->client->ps.basespeed / 250.0f))) {
 			VectorScale(player->client->ps.velocity, (trigger->speed * (player->client->ps.basespeed / 250.0f)) / VectorLength(hVel), player->client->ps.velocity);
 		}
 	}
