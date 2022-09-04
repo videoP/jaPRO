@@ -7615,6 +7615,37 @@ void Cmd_Trace_f(gentity_t* ent) {
 		return;
 	}
 
+	if (trap->Argc() > 1) {
+		char arg[16] = { 0 };
+		int input;
+		trap->Argv(1, arg, sizeof(arg));
+		input = atoi(arg);
+
+		if (input == ENTITYNUM_WORLD || input == ENTITYNUM_NONE || input < 0 || (input > MAX_ENTITIESTOTAL-1))
+			return;
+
+		tEnt = &g_entities[input];
+
+		if (tEnt && tEnt->inuse) {
+
+			Q_strncpyz(buf, va("^5Entity ^3%i ^5info:\n", tEnt->s.number), sizeof(buf));
+			Q_strcat(buf, sizeof(buf), va("   ^5Classname^3: ^2%s\n", tEnt->classname));
+			if (tEnt->targetname && tEnt->targetname[0])
+				Q_strcat(buf, sizeof(buf), va("   ^5Targetname^3: ^2%s\n", tEnt->targetname));
+			if (tEnt->target && tEnt->target[0]) {
+				Q_strcat(buf, sizeof(buf), va("   ^5Target^3: ^2%s\n", tEnt->target));
+			}
+			Q_strcat(buf, sizeof(buf), va("   ^5Spawnflags^3: ^2%i\n", tEnt->spawnflags));
+			Q_strcat(buf, sizeof(buf), va("   ^5Constant origin^3: (^2%.00f %.00f %.00f^3)\n", tEnt->s.origin[0], tEnt->s.origin[1], tEnt->s.origin[2]));
+			Q_strcat(buf, sizeof(buf), va("   ^5Constant angles^3: (^2%.00f %.00f %.00f^3)\n", tEnt->s.angles[0], tEnt->s.angles[1], tEnt->s.angles[2]));
+			if (tEnt->model) {
+				Q_strcat(buf, sizeof(buf), va("   ^5Model^3: ^2%s\n", tEnt->model));
+			}
+
+			trap->SendServerCommand(ent - g_entities, va("print \"%s\"", buf));
+		}
+	}
+	else
 	{
 		trace_t tr;
 		vec3_t fPos, maxs, mins, start;
