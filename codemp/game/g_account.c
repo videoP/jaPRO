@@ -2132,10 +2132,13 @@ void Cmd_ACLogin_f( gentity_t *ent ) { //loda fixme show lastip ? or use lastip 
 
 	trap->Argv(3, enteredKey, sizeof(enteredKey));
 	key = atoi(enteredKey);
-	if (key && sv_pluginKey.integer > 0) {
+	if (key && sv_pluginKey.integer) {
+		int mod, add, pluginKey = sv_pluginKey.integer;
 		int time = (ent->client->pers.cmd.serverTime + 500) / 1000 * 1000;
-		int mod = sv_pluginKey.integer / 1000;
-		int add = sv_pluginKey.integer % 1000;
+		if (sv_pluginKey.integer < 0)
+			pluginKey = -pluginKey;
+		mod = pluginKey / 1000;
+		add = pluginKey % 1000;
 
 		if (mod > 0) {
 			//trap->Print("Client logged in with key: %i and time %i correct key is %i\n", key, time, (time % mod) + add);
