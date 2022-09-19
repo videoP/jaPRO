@@ -2146,8 +2146,10 @@ void Cmd_ACLogin_f( gentity_t *ent ) { //loda fixme show lastip ? or use lastip 
 				ent->client->pers.validPlugin = qtrue;
 				//trap->Print("Valid login\n");
 			}
-			else
+			else {
+				trap->SendServerCommand(ent - g_entities, "print \"^1Error authenticating!\n\"");
 				ent->client->pers.validPlugin = qfalse;
+			}
 		}
 	}
 	else {
