@@ -3991,7 +3991,16 @@ static void WP_FireConcussionAlt( gentity_t *ent )
 		shove = -400 * g_selfDamageScale.value;
 
 	if (shove) {
-		VectorMA( ent->client->ps.velocity, shove, forward, ent->client->ps.velocity );
+		if (ent->client->pers.backwardsRocket && ent->client->sess.raceMode) {
+			vec3_t temp;
+			vectoangles(forward, temp);
+			temp[1] += 180;
+			AngleVectors(temp, temp, NULL, NULL);
+			VectorMA(ent->client->ps.velocity, shove, temp, ent->client->ps.velocity);
+		}
+		else {
+			VectorMA(ent->client->ps.velocity, shove, forward, ent->client->ps.velocity);
+		}
 		ent->client->ps.groundEntityNum = ENTITYNUM_NONE;
 		if ( (ent->client->ps.pm_flags&PMF_DUCKED) )
 		{//hunkered down
