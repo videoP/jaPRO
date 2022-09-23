@@ -8522,6 +8522,7 @@ void Cmd_ListMasters_f(gentity_t *ent);
 void Cmd_AddMaster_f(gentity_t *ent);
 void Cmd_Trace_f(gentity_t* ent);
 void Cmd_Nearby_f(gentity_t* ent);
+void Cmd_InvalidateRace_f(gentity_t* ent);
 
 /* This array MUST be sorted correctly by alphabetical name field */
 command_t commands[] = {
@@ -8626,6 +8627,9 @@ command_t commands[] = {
 	{ "duelteam",			Cmd_DuelTeam_f,				CMD_NOINTERMISSION },
 	{ "engage_fullforceduel",	Cmd_ForceDuel_f,		CMD_NOINTERMISSION },//JAPRO - Serverside - Fullforce Duels
 	{ "engage_gunduel",		Cmd_GunDuel_f,				CMD_NOINTERMISSION },//JAPRO - Serverside - Fullforce Duels
+
+	{ "flagRecord",			Cmd_InvalidateRace_f,		CMD_NOINTERMISSION },
+
 	{ "follow",				Cmd_Follow_f,				CMD_NOINTERMISSION },
 	{ "follownext",			Cmd_FollowNext_f,			CMD_NOINTERMISSION },
 	{ "followprev",			Cmd_FollowPrev_f,			CMD_NOINTERMISSION },

@@ -2765,7 +2765,8 @@ static bitInfo_T accountFlags[] = {
 	{"No Race"},//25
 	{"No Duel"},//26
 	{"All Cosmetics"},//27
-	{"Entities"}//27
+	{"Entities"},//28
+	{"Database"}//29
 };
 static const int MAX_ACCOUNT_FLAGS = ARRAY_LEN( accountFlags );
 
@@ -5284,6 +5285,71 @@ void Cmd_NotCompleted_f(gentity_t *ent) {
 }
 #endif
 
+//
+int G_AdminAllowed(gentity_t* ent, unsigned int adminCmd, qboolean cheatAllowed, qboolean raceAllowed, char* cmdName);
+void Cmd_InvalidateRace_f(gentity_t* ent)
+{
+	char username[16], coursename[40], styleStr[16], season[8];
+	int i, style;
+
+	if (trap->Argc() != 5) {
+		trap->SendServerCommand(ent - g_entities, "print \"Usage: /flagRecord <username> <coursename> <style> <season>. Use * in place of space in the coursename.\n\"");
+		//flagRecord kane racearena_pro*(dash1) jka
+		return;
+	}
+
+	if (!G_AdminAllowed(ent, JAPRO_ACCOUNTFLAG_DATABASE, qfalse, qfalse, "flagRecord"))
+		return;
+
+	trap->Argv(1, username, sizeof(username));
+	trap->Argv(2, coursename, sizeof(coursename));
+	trap->Argv(3, styleStr, sizeof(styleStr));
+	trap->Argv(4, season, sizeof(season));
+
+	for (i = 0; i < strlen(coursename); i++) {//Replace / in mapname with _ since we cant have a file named mp/duel1.cfg etc.
+		if (coursename[i] == '*')
+			coursename[i] = ' ';
+	}
+
+	Q_strlwr(username);
+	Q_CleanStr(username);
+	Q_strlwr(coursename);
+	Q_CleanStr(coursename);
+	Q_strlwr(styleStr);
+	Q_CleanStr(styleStr);
+	Q_strlwr(season);
+	Q_CleanStr(season);
+
+	style = RaceNameToInteger(styleStr);
+
+	//Com_Printf("%s - %s - %s - %s\n", username, coursename, style, season);
+
+	{
+		sqlite3* db;
+		char* sql;
+		sqlite3_stmt* stmt;
+		int s;
+
+		CALL_SQLITE(open(LOCAL_DB_PATH, &db));
+
+		sql = "UPDATE LocalRun SET invalid = 1 WHERE username = ? AND coursename = ? AND style = ? AND season = ?";
+		CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+		CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_int(stmt, 3, style));
+		CALL_SQLITE(bind_text(stmt, 4, season, -1, SQLITE_STATIC));
+
+		s = sqlite3_step(stmt);
+		if (s == SQLITE_DONE)
+			trap->SendServerCommand(ent - g_entities, "print \"Record flagged?\n\"");
+		else
+			G_ErrorPrint("ERROR: SQL Update Failed (Svcmd_InvalidateRace_f 1)", s);
+		CALL_SQLITE(finalize(stmt));
+
+		CALL_SQLITE(close(db));
+	}
+}
+
 void Cmd_DFFind_f(gentity_t *ent) {
 	int style = -1, season = -1, input, i;
 	char inputString[40], inputStyleString[16], username[16];
@@ -6028,9 +6094,9 @@ void Cmd_DFTop10_f(gentity_t *ent) {
 		//fix by grouping by username here? and using min() so it shows right one? who knows if that will work
 		//could be cheaper by using where rank != 0 instead of min(duration_ms) but w/e
 		if (season == -1)
-			sql = "SELECT username, MIN(duration_ms) AS duration, topspeed, average, end_time FROM LocalRun WHERE coursename = ? AND style = ? GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC LIMIT ?, 10";
+			sql = "SELECT username, MIN(duration_ms) AS duration, topspeed, average, end_time, invalid FROM LocalRun WHERE coursename = ? AND style = ? GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC LIMIT ?, 10";
 		else 
-			sql = "SELECT username, MIN(duration_ms) AS duration, topspeed, average, end_time FROM LocalRun WHERE coursename = ? AND style = ? AND season = ? GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC LIMIT ?, 10";
+			sql = "SELECT username, MIN(duration_ms) AS duration, topspeed, average, end_time, invalid FROM LocalRun WHERE coursename = ? AND style = ? AND season = ? GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC LIMIT ?, 10";
 		CALL_SQLITE (prepare_v2 (db, sql, strlen (sql) + 1, & stmt, NULL));
 		CALL_SQLITE (bind_text (stmt, 1, fullCourseName, -1, SQLITE_STATIC));
 		CALL_SQLITE (bind_int (stmt, 2, style));
@@ -6042,6 +6108,8 @@ void Cmd_DFTop10_f(gentity_t *ent) {
 			CALL_SQLITE (bind_int (stmt, 3, season));
 			CALL_SQLITE (bind_int (stmt, 4, start));
 		}
+
+		//Todo, select flagged, if flagged - change color of the time during print.
 
 		time( &rawtime );
 		localtime( &rawtime );
@@ -6062,7 +6130,10 @@ void Cmd_DFTop10_f(gentity_t *ent) {
 				else {
 					Q_strncpyz(dateStrColored, dateStr, sizeof(dateStrColored));
 				}
-				tmpMsg = va("^5%2i^3: ^3%-18s ^3%-12s ^3%-11i ^3%-12i %s\n", row+start, sqlite3_column_text(stmt, 0), timeStr, sqlite3_column_int(stmt, 2), sqlite3_column_int(stmt, 3), dateStrColored);
+				if (sqlite3_column_int(stmt, 5) == 1) //temp, make flagged runs red until we can figure out how to handle them
+					tmpMsg = va("^5%2i^3: ^3%-18s ^1%-12s ^3%-11i ^3%-12i %s\n", row+start, sqlite3_column_text(stmt, 0), timeStr, sqlite3_column_int(stmt, 2), sqlite3_column_int(stmt, 3), dateStrColored);
+				else
+					tmpMsg = va("^5%2i^3: ^3%-18s ^3%-12s ^3%-11i ^3%-12i %s\n", row + start, sqlite3_column_text(stmt, 0), timeStr, sqlite3_column_int(stmt, 2), sqlite3_column_int(stmt, 3), dateStrColored);
 				if (strlen(msg) + strlen(tmpMsg) >= sizeof( msg)) {
 					trap->SendServerCommand( ent-g_entities, va("print \"%s\"", msg));
 					msg[0] = '\0';
@@ -6692,7 +6763,6 @@ void Cmd_DFRefresh_f(gentity_t *ent) {
 }
 #endif
 
-int G_AdminAllowed(gentity_t *ent, unsigned int adminCmd, qboolean cheatAllowed, qboolean raceAllowed, char *cmdName);
 int JP_ClientNumberFromString(gentity_t *to, const char *s);
 void Cmd_ACWhois_f( gentity_t *ent ) { //why does this crash sometimes..? conditional open/close issue??
 	int			i;
@@ -6911,7 +6981,7 @@ void InitGameAccountStuff( void ) { //Called every mapload , move the create tab
 
 #if 1//NEWRACERANKING
 	sql = "CREATE TABLE IF NOT EXISTS LocalRun(id INTEGER PRIMARY KEY, username VARCHAR(16), coursename VARCHAR(40), duration_ms UNSIGNED INTEGER, topspeed UNSIGNED SMALLINT, "
-		"average UNSIGNED SMALLINT, style UNSIGNED TINYINT, season UNSIGNED TINYINT, end_time UNSIGNED INTEGER, rank UNSIGNED SMALLINT, entries UNSIGNED SMALLINT, season_rank UNSIGNED SMALLINT, season_entries UNSIGNED SMALLINT, last_update UNSIGNED INTEGER)";
+		"average UNSIGNED SMALLINT, style UNSIGNED TINYINT, season UNSIGNED TINYINT, end_time UNSIGNED INTEGER, rank UNSIGNED SMALLINT, entries UNSIGNED SMALLINT, season_rank UNSIGNED SMALLINT, season_entries UNSIGNED SMALLINT, last_update UNSIGNED INTEGER, invalid UNSIGNED TINYINT)";
 #else
 	sql = "CREATE TABLE IF NOT EXISTS LocalRun(id INTEGER PRIMARY KEY, username VARCHAR(16), coursename VARCHAR(40), duration_ms UNSIGNED INTEGER, topspeed UNSIGNED SMALLINT, "
 		"average UNSIGNED SMALLINT, style UNSIGNED TINYINT, end_time UNSIGNED INTEGER)";
