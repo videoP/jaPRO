@@ -1203,7 +1203,7 @@ void G_GetRaceScore(int id, char *username, char *coursename, int style, int sea
 
 	//can we index on duration_ms ?
 	//Get global rank - if its a season PB but not a global PB, leave global rank at 0
-	sql = "SELECT id, MIN(duration_ms) AS duration FROM LocalRun WHERE coursename = ? AND style = ? GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC";
+	sql = "SELECT id, MIN(duration_ms) AS duration FROM LocalRun WHERE coursename = ? AND style = ? AND invalid != 1 GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC";
 	CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 	CALL_SQLITE(bind_text(stmt, 1, coursename, -1, SQLITE_STATIC));
 	CALL_SQLITE(bind_int(stmt, 2, style));
