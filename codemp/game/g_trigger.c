@@ -1205,15 +1205,15 @@ qboolean ValidRaceSettings(int restrictions, gentity_t *player)
 
 	style = player->client->sess.movementStyle;
 
-	//if (style == MV_COOP_JKA)
-		//return qfalse;//temp
+	if (style == MV_OCPM)
+		return qfalse;//temp
 
 	if (player->client->sess.accountFlags & JAPRO_ACCOUNTFLAG_NORACE)
 		return qfalse;
 	if ((style == MV_RJQ3 || style == MV_RJCPM) && g_knockback.value != 1000.0f)
 		return qfalse;
 
-	if (style != MV_CPM && style != MV_Q3 && style != MV_WSW && style != MV_RJQ3 && style != MV_RJCPM && style != MV_JETPACK && style != MV_SWOOP && style != MV_JETPACK && style != MV_SLICK && style != MV_BOTCPM && style != MV_COOP_JKA) { //Ignore forcejump restrictions if in onlybhop movement modes
+	if (style != MV_CPM && style != MV_OCPM && style != MV_Q3 && style != MV_WSW && style != MV_RJQ3 && style != MV_RJCPM && style != MV_JETPACK && style != MV_SWOOP && style != MV_JETPACK && style != MV_SLICK && style != MV_BOTCPM && style != MV_COOP_JKA) { //Ignore forcejump restrictions if in onlybhop movement modes
 		if (restrictions & (1 << 0)) {//flags 1 = restrict to jump1
 			if (player->client->ps.fd.forcePowerLevel[FP_LEVITATION] != 1 || player->client->ps.powerups[PW_YSALAMIRI] > 0) {
 				trap->SendServerCommand( player-g_entities, "cp \"^3Warning: this course requires force jump level 1!\n\n\n\n\n\n\n\n\n\n\"");
@@ -1445,7 +1445,7 @@ void TimerStart(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO 
 			VectorScale(player->client->ps.velocity, (trigger->speed) / VectorLength(hVel), player->client->ps.velocity);
 		}
 	}
-	else if (trigger->spawnflags & 4 && (player->client->sess.movementStyle == MV_CPM || player->client->sess.movementStyle == MV_PJK || player->client->sess.movementStyle == MV_WSW || 
+	else if (trigger->spawnflags & 4 && (player->client->sess.movementStyle == MV_CPM || player->client->sess.movementStyle == MV_OCPM  || player->client->sess.movementStyle == MV_PJK || player->client->sess.movementStyle == MV_WSW ||
 		player->client->sess.movementStyle == MV_RJCPM || player->client->sess.movementStyle == MV_SWOOP)) {//set speed to speed value, keep our direction the same
 		vec3_t hVel;
 		hVel[0] = player->client->ps.velocity[0];

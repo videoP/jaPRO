@@ -6773,7 +6773,7 @@ static void Cmd_JumpChange_f(gentity_t *ent)
 		return;
 	}
 
-	if (ent->client->sess.movementStyle == MV_COOP_JKA || ent->client->sess.movementStyle == MV_Q3 || ent->client->sess.movementStyle == MV_CPM || ent->client->sess.movementStyle == MV_JETPACK || 
+	if (ent->client->sess.movementStyle == MV_COOP_JKA || ent->client->sess.movementStyle == MV_Q3 || ent->client->sess.movementStyle == MV_CPM || ent->client->sess.movementStyle == MV_OCPM || ent->client->sess.movementStyle == MV_JETPACK ||
 		ent->client->sess.movementStyle == MV_WSW || ent->client->sess.movementStyle == MV_BOTCPM || ent->client->sess.movementStyle == MV_SLICK) {
 		char styleString[16];
 		IntegerToRaceName(ent->client->sess.movementStyle, styleString, sizeof(styleString));

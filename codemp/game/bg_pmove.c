@@ -1478,7 +1478,7 @@ qboolean PM_ForceJumpingUp(void)
 
 	moveStyle = PM_GetMovePhysics();
 
-	if (moveStyle == MV_CPM || moveStyle == MV_Q3 || moveStyle == MV_WSW || moveStyle == MV_RJQ3 || moveStyle == MV_RJCPM || moveStyle == MV_JETPACK || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM)
+	if (moveStyle == MV_CPM || moveStyle == MV_Q3 || moveStyle == MV_WSW || moveStyle == MV_RJQ3 || moveStyle == MV_RJCPM || moveStyle == MV_JETPACK || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM || moveStyle == MV_OCPM)
 		return qfalse;
 
 	if (!BG_CanUseFPNow(pm->gametype, pm->ps, pm->cmd.serverTime, FP_LEVITATION))
@@ -2443,6 +2443,7 @@ static qboolean PM_CheckJump( void )
 		!PM_IsRocketTrooper() &&
 		!BG_HasYsalamiri(pm->gametype, pm->ps) &&
 		(moveStyle != MV_CPM) &&
+		(moveStyle != MV_OCPM) &&
 		(moveStyle != MV_Q3) &&
 		(moveStyle != MV_WSW) &&
 		(moveStyle != MV_RJQ3) &&
@@ -3184,14 +3185,14 @@ static qboolean PM_CheckJump( void )
 	}
 	if ( pm->cmd.upmove > 0 )
 	{//no special jumps
-		if (moveStyle == MV_QW || moveStyle == MV_CPM || moveStyle == MV_Q3 || moveStyle == MV_PJK || moveStyle == MV_WSW || moveStyle == MV_RJQ3 || moveStyle == MV_RJCPM || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM)
+		if (moveStyle == MV_QW || moveStyle == MV_CPM || moveStyle == MV_OCPM || moveStyle == MV_Q3 || moveStyle == MV_PJK || moveStyle == MV_WSW || moveStyle == MV_RJQ3 || moveStyle == MV_RJCPM || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM)
 		{
 			vec3_t hVel;
 			float added, xyspeed, realjumpvelocity = JUMP_VELOCITY;
 			
 			if (moveStyle == MV_WSW)
 				realjumpvelocity = 280.0f;
-			else if (moveStyle == MV_CPM || moveStyle == MV_Q3 || moveStyle == MV_RJQ3 || moveStyle == MV_RJCPM || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM)
+			else if (moveStyle == MV_CPM || moveStyle == MV_OCPM || moveStyle == MV_Q3 || moveStyle == MV_RJQ3 || moveStyle == MV_RJCPM || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM)
 				realjumpvelocity = 270.0f;
 
 			hVel[0] = pm->ps->velocity[0];
@@ -3773,7 +3774,7 @@ static void PM_AirMove( void ) {
 	// not on ground, so little effect on velocity
 	if (moveStyle == MV_QW)
 		PM_AirAccelerate(wishdir, wishspeed, 0.7f);//pm_qw_airaccel
-	else if (moveStyle == MV_CPM || moveStyle == MV_PJK || moveStyle == MV_WSW || moveStyle == MV_RJCPM || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM)
+	else if (moveStyle == MV_CPM || moveStyle == MV_OCPM || moveStyle == MV_PJK || moveStyle == MV_WSW || moveStyle == MV_RJCPM || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM)
 	{
 		float		accel;
 		float		wishspeed2;
@@ -3785,7 +3786,7 @@ static void PM_AirMove( void ) {
 			accel = pm_airaccelerate;
 
 		if (pm->ps->movementDir == 2 || pm->ps->movementDir == 6) {
-			if (moveStyle == MV_CPM || moveStyle == MV_PJK || moveStyle == MV_WSW || moveStyle == MV_RJCPM || moveStyle == MV_BOTCPM) {
+			if (moveStyle == MV_CPM || moveStyle == MV_OCPM || moveStyle == MV_PJK || moveStyle == MV_WSW || moveStyle == MV_RJCPM || moveStyle == MV_BOTCPM) {
 				if (wishspeed > 30.0f)//cpm_pm_wishspeed
 					wishspeed = 30.0f;	
 				accel = 70.0f;//cpm_pm_strafeaccelerate
@@ -4234,7 +4235,7 @@ static void PM_WalkMove( void ) {
 		}
 	}
 
-	if (moveStyle == MV_CPM || moveStyle == MV_RJCPM || moveStyle == MV_BOTCPM)
+	if (moveStyle == MV_CPM || moveStyle == MV_OCPM || moveStyle == MV_RJCPM || moveStyle == MV_BOTCPM)
 		realaccelerate = 15.0f;
 	else if (moveStyle == MV_Q3 || moveStyle == MV_RJQ3)
 		realduckscale = 0.25f;
@@ -4585,6 +4586,7 @@ static int PM_TryRoll( void )
 		PM_IsRocketTrooper() ||
 		BG_HasYsalamiri(pm->gametype, pm->ps) ||
 		(moveStyle == MV_CPM) ||
+		(moveStyle == MV_OCPM) ||
 		(moveStyle == MV_Q3) ||
 		(moveStyle == MV_WSW) ||
 		(moveStyle == MV_RJQ3) ||
@@ -4980,7 +4982,7 @@ static void PM_CrashLand( void ) {
 	// make sure velocity resets so we don't bounce back up again in case we miss the clear elsewhere
 	pm->ps->velocity[2] = 0;
 
-	if ((moveStyle == MV_CPM || moveStyle == MV_Q3 || moveStyle == MV_RJQ3 || moveStyle == MV_RJCPM || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM) && ((int)pm->ps->fd.forceJumpZStart > pm->ps->origin[2] + 1)) {
+	if ((moveStyle == MV_CPM || moveStyle == MV_OCPM || moveStyle == MV_Q3 || moveStyle == MV_RJQ3 || moveStyle == MV_RJCPM || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM) && ((int)pm->ps->fd.forceJumpZStart > pm->ps->origin[2] + 1)) {
 		if (1 > (sqrt(pm->ps->velocity[0] * pm->ps->velocity[0] + pm->ps->velocity[1] * pm->ps->velocity[1])))//No xyvel
 			pm->ps->velocity[2] = -vel; //OVERBOUNCE OVER BOUNCE
 	}
@@ -13159,7 +13161,7 @@ void PmoveSingle (pmove_t *pmove) {
 		trap->SnapVector( pm->ps->velocity ); 
 	}
 	else {
-		if (pm->ps->stats[STAT_RACEMODE] || pm->pmove_float > 1) {//japro fix racemode fps
+		if ((pm->ps->stats[STAT_RACEMODE] && (pm->ps->stats[STAT_MOVEMENTSTYLE] != MV_OCPM)) || (!pm->ps->stats[STAT_RACEMODE] && (pm->pmove_float > 1))) {//japro fix racemode fps
 		}
 	#ifdef _GAME
 		else if (g_fixHighFPSAbuse.integer && ((pml.msec < 4) || (pml.msec > 25))) { //More than 333fps, or less than 40fps.
@@ -13280,7 +13282,7 @@ void Pmove (pmove_t *pmove) {
 		msec = finalTime - pmove->ps->commandTime;
 		if (pmove->ps->stats[STAT_RACEMODE]) { //Using float now
 			if ( msec > 8 ) {
-				if (BG_InRollFixed(pmove->ps, pmove->ps->legsAnim)) {
+				if (BG_InRollFixed(pmove->ps, pmove->ps->legsAnim) || (pmove->ps->stats[STAT_MOVEMENTSTYLE] == MV_OCPM)) {
 					msec = 8;
 				}
 				/*else if (msec > 16) {

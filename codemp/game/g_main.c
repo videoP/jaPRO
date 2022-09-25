@@ -2211,6 +2211,7 @@ can see the last frag.
 =================
 */
 qboolean g_endPDuel = qfalse;
+void Svcmd_ResetScores_f(void);
 void CheckExitRules( void ) {
  	int			i;
 	gclient_t	*cl;

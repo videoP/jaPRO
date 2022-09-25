@@ -1027,6 +1027,7 @@ void IntegerToRaceName(int style, char *styleString, size_t styleStringSize) {
 #if _COOP
 		case 15: Q_strncpyz(styleString, "coop", styleStringSize); break;
 #endif
+		case 16: Q_strncpyz(styleString, "ocpm", styleStringSize); break;
 		default: Q_strncpyz(styleString, "ERROR", styleStringSize); break;
 	}
 }
@@ -5036,6 +5037,8 @@ int RaceNameToInteger(char *style) {
 	if (!Q_stricmp(style, "coop"))
 		return 15;
 #endif
+	if (!Q_stricmp(style, "ocpm"))
+		return 16;
 	return -1;
 }
 
