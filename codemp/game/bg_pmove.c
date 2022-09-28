@@ -4360,6 +4360,10 @@ static void PM_WalkMove( void ) {
 	else if (((pml.groundTrace.surfaceFlags & SURF_SLICK) && moveStyle != MV_SLICK) || pm->ps->pm_flags & PMF_TIME_KNOCKBACK)
 	{//We just ignore this with slick style since we area always slick, we dont need the flag to tell us that
 		accelerate = pm_airaccelerate; //this should be changed for QW and other stuff, but whatever, already done
+		if (moveStyle == MV_OCPM)
+			accelerate = 15.0f;
+		else
+			accelerate = pm_airaccelerate; //this should be changed for QW and other stuff, but whatever, already done
 	}
 	else
 	{
