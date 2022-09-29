@@ -10008,7 +10008,8 @@ void BG_AdjustClientSpeed(playerState_t *ps, usercmd_t *cmd, int svTime)
 #else
 		if (!(cgs.jcinfo & JAPRO_CINFO_ROLLCANCEL) || pm->ps->stats[STAT_RACEMODE])
 #endif
-			ps->speed *= 0.75f; //JK2 1.02 doesn't have this? does q3 / wsw?
+			if (pm->ps->stats[STAT_MOVEMENTSTYLE] != MV_OCPM)
+				ps->speed *= 0.75f; //JK2 1.02 doesn't have this? does q3 / wsw?
 	}
 
 //[JAPRO - Serverside + Clientside - Force - Add fast grip option - Start]
