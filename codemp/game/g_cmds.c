@@ -7070,6 +7070,7 @@ static void Cmd_Practice_f(gentity_t *ent)
 	}
 
 	ent->client->pers.practice = (qboolean)!ent->client->pers.practice; //toggle it
+	ent->client->pers.haste = qfalse;
 
 	if (ent->client->pers.practice) {
 		if (ent->client->pers.stats.startTime || ent->client->pers.stats.startTimeFlag) {
