@@ -5693,6 +5693,7 @@ void Cmd_Aminfo_f(gentity_t *ent)
 		Q_strcat(buf, sizeof(buf), "jump ");
 		Q_strcat(buf, sizeof(buf), "move ");
 		Q_strcat(buf, sizeof(buf), "rocketChange ");
+		Q_strcat(buf, sizeof(buf), "haste ");
 		Q_strcat(buf, sizeof(buf), "hide ");
 		Q_strcat(buf, sizeof(buf), "practice ");
 		Q_strcat(buf, sizeof(buf), "launch ");
@@ -6838,6 +6839,48 @@ static void Cmd_BackwardsRocket_f(gentity_t *ent)
 		trap->SendServerCommand(ent-g_entities, "print \"Movement style updated.\n\"");
 
 	ent->client->pers.backwardsRocket = !ent->client->pers.backwardsRocket;
+}
+
+static void Cmd_Haste_f(gentity_t* ent)
+{
+	if (!ent->client)
+		return;
+
+	if (trap->Argc() != 1) {
+		trap->SendServerCommand(ent - g_entities, "print \"Usage: /haste\n\"");
+		return;
+	}
+
+	if (!g_raceMode.integer) {
+		trap->SendServerCommand(ent - g_entities, "print \"This command is not allowed in this gamemode!\n\"");
+		return;
+	}
+
+	if (!ent->client->sess.raceMode) {
+		trap->SendServerCommand(ent - g_entities, "print \"You must be in racemode to use this command!\n\"");
+		return;
+	}
+
+	if (ent->client->sess.movementStyle != MV_CPM && ent->client->sess.movementStyle != MV_OCPM
+		&& ent->client->sess.movementStyle != MV_Q3 && ent->client->sess.movementStyle != MV_RJQ3
+		&& ent->client->sess.movementStyle != MV_RJCPM && ent->client->sess.movementStyle != MV_WSW) {
+		trap->SendServerCommand(ent - g_entities, "print \"This command is not compatible with your movementstyle!\n\"");
+		return;
+	}
+	/*
+	if (VectorLength(ent->client->ps.velocity)) {
+		trap->SendServerCommand(ent - g_entities, "print \"You must be standing still to use this command!\n\"");
+		return;
+	}
+	*/
+
+	if (ent->client->pers.practice) {
+		trap->SendServerCommand(ent - g_entities, "print \"Haste toggled.\n\"");
+		ent->client->pers.haste = !ent->client->pers.haste;
+	}
+	else
+		trap->SendServerCommand(ent - g_entities, "print \"You must be in practice mode to use this command!\n\"");
+
 }
 
 static void Cmd_Hide_f(gentity_t *ent)
@@ -8523,6 +8566,7 @@ void Cmd_AddMaster_f(gentity_t *ent);
 void Cmd_Trace_f(gentity_t* ent);
 void Cmd_Nearby_f(gentity_t* ent);
 void Cmd_InvalidateRace_f(gentity_t* ent);
+void Cmd_Haste_f(gentity_t* ent);
 
 /* This array MUST be sorted correctly by alphabetical name field */
 command_t commands[] = {
@@ -8640,6 +8684,7 @@ command_t commands[] = {
 	{ "giveother",			Cmd_GiveOther_f,			CMD_CHEAT|CMD_ALIVE|CMD_NOINTERMISSION },
 	{ "god",				Cmd_God_f,					CMD_CHEAT|CMD_ALIVE|CMD_NOINTERMISSION },
 
+	{ "haste",				Cmd_Haste_f,		CMD_NOINTERMISSION | CMD_ALIVE },
 	{ "hide",				Cmd_Hide_f,					CMD_NOINTERMISSION|CMD_ALIVE},
 	{ "ignore",				Cmd_Ignore_f,				0 },//[JAPRO - Serverside - All - Ignore]
 	{ "jetpack",			Cmd_Jetpack_f,				CMD_NOINTERMISSION|CMD_ALIVE },

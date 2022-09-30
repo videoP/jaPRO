@@ -2359,7 +2359,7 @@ void rocketThink( gentity_t *ent )
 	float vel = (ent->spawnflags&1)?ent->speed:ROCKET_VELOCITY;
 	qboolean redeemerAllowed = qtrue;
 
-	if (!g_entities[ent->r.ownerNum].client || !g_entities[ent->r.ownerNum].client->sess.raceMode)
+	if (!g_entities[ent->r.ownerNum].client || g_entities[ent->r.ownerNum].client->sess.raceMode)
 		redeemerAllowed = qfalse;
 
 	if ( ent->genericValue1 && ent->genericValue1 < level.time )
