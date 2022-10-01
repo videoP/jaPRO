@@ -1962,20 +1962,26 @@ void NewPush(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO Tim
 			return;
 	}
 
-	if (trigger && trigger->spawnflags & 32) { //Spawnflags 4 deadstops them if they are traveling in this direction... sad hack to let people retroactively fix maps without barriers 
-		if (trigger->speed == 0 && player->client->ps.velocity[0] > player->client->ps.speed+20) {
-			player->client->ps.velocity[0] = player->client->ps.speed;
+	if (trigger && player->client->sess.raceMode) {
+		if (trigger->spawnflags & 32) { //Spawnflags 4 deadstops them if they are traveling in this direction... sad hack to let people retroactively fix maps without barriers 
+			if (trigger->speed == 0 && player->client->ps.velocity[0] > player->client->ps.speed + 20) {
+				player->client->ps.velocity[0] = player->client->ps.speed;
+			}
+			else if (trigger->speed == 90 && player->client->ps.velocity[1] > player->client->ps.speed + 20) {
+				player->client->ps.velocity[1] = player->client->ps.speed;
+			}
+			else if (trigger->speed == 180 && player->client->ps.velocity[0] < -player->client->ps.speed - 20) {
+				player->client->ps.velocity[0] = -player->client->ps.speed;
+			}
+			else if (trigger->speed == 270 && player->client->ps.velocity[1] < -player->client->ps.speed - 20) {
+				player->client->ps.velocity[1] = -player->client->ps.speed;
+			}
+			return;
 		}
-		else if (trigger->speed == 90 && player->client->ps.velocity[1] > player->client->ps.speed+20) {
-			player->client->ps.velocity[1] = player->client->ps.speed;
+		else if (trigger->spawnflags & 64) { //block dash
+			player->client->ps.stats[STAT_WJTIME] = 1000;
+			player->client->ps.stats[STAT_DASHTIME] = 1000;
 		}
-		else if (trigger->speed == 180 && player->client->ps.velocity[0] < -player->client->ps.speed-20) {
-			player->client->ps.velocity[0] = -player->client->ps.speed;
-		}
-		else if (trigger->speed == 270 && player->client->ps.velocity[1] < -player->client->ps.speed-20) {
-			player->client->ps.velocity[1] = -player->client->ps.speed;
-		}
-		return;
 	}
 
 	if (player->client->lastBounceTime > level.time - 500)
