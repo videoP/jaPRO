@@ -1962,7 +1962,7 @@ void NewPush(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO Tim
 			return;
 	}
 
-	if (trigger && player->client->sess.raceMode) {
+	if (player->client->sess.raceMode) {
 		if (trigger->spawnflags & 32) { //Spawnflags 4 deadstops them if they are traveling in this direction... sad hack to let people retroactively fix maps without barriers 
 			if (trigger->speed == 0 && player->client->ps.velocity[0] > player->client->ps.speed + 20) {
 				player->client->ps.velocity[0] = player->client->ps.speed;
@@ -1978,7 +1978,7 @@ void NewPush(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO Tim
 			}
 			return;
 		}
-		else if (trigger->spawnflags & 64) { //block dash
+		else if (trigger->spawnflags & 64 && (player->client->ps.velocity[0] || player->client->ps.velocity[1])) { //block dash redirects
 			player->client->ps.stats[STAT_WJTIME] = 1000;
 			player->client->ps.stats[STAT_DASHTIME] = 1000;
 		}

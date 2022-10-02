@@ -5335,12 +5335,21 @@ void Cmd_InvalidateRace_f(gentity_t* ent)
 
 		CALL_SQLITE(open(LOCAL_DB_PATH, &db));
 
-		sql = "UPDATE LocalRun SET invalid = 1 WHERE username = ? AND coursename = ? AND style = ? AND season = ?";
-		CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
-		CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
-		CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
-		CALL_SQLITE(bind_int(stmt, 3, style));
-		CALL_SQLITE(bind_text(stmt, 4, season, -1, SQLITE_STATIC));
+		if (season == -1) {
+			sql = "UPDATE LocalRun SET invalid = 1 WHERE username = ? AND coursename = ? AND style = ?";
+			CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+			CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_int(stmt, 3, style));
+		}
+		else {
+			sql = "UPDATE LocalRun SET invalid = 1 WHERE username = ? AND coursename = ? AND style = ? AND season = ?";
+			CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+			CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_int(stmt, 3, style));
+			CALL_SQLITE(bind_text(stmt, 4, season, -1, SQLITE_STATIC));
+		}
 
 		s = sqlite3_step(stmt);
 		if (s == SQLITE_DONE)
