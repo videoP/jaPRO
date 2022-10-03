@@ -5335,8 +5335,8 @@ void Cmd_InvalidateRace_f(gentity_t* ent)
 
 		CALL_SQLITE(open(LOCAL_DB_PATH, &db));
 
-		if (season == -1) {
-			sql = "UPDATE LocalRun SET invalid = 1 WHERE username = ? AND coursename = ? AND style = ?";
+		if (!Q_stricmp(season, "-1")) {
+			sql = "UPDATE LocalRun SET invalid = 1 WHERE username = ? AND coursename = ? AND style = ? AND season < 5";
 			CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 			CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
 			CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
