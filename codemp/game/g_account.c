@@ -1879,7 +1879,7 @@ void G_AddRaceTime(char *username, char *message, int duration_ms, int style, in
 		int duration, lastDuration = 0;
 
 		sql = "SELECT COUNT(*) FROM LocalRun WHERE coursename = ? AND style = ? AND season = ? "
-			"UNION ALL SELECT COUNT(DISTINCT username) FROM LocalRun WHERE coursename = ? AND style = ?"; //entries ?
+			"UNION ALL SELECT COUNT(DISTINCT username) FROM LocalRun WHERE coursename = ? AND style = ? AND invalid != 1"; //entries ?
 		CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 		CALL_SQLITE(bind_text(stmt, 1, coursename, -1, SQLITE_STATIC));
 		CALL_SQLITE(bind_int(stmt, 2, style));
