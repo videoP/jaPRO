@@ -1963,7 +1963,7 @@ void NewPush(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO Tim
 	}
 
 	if (player->client->sess.raceMode) {
-		if (trigger->spawnflags & 32) { //Spawnflags 4 deadstops them if they are traveling in this direction... sad hack to let people retroactively fix maps without barriers 
+		if (trigger->spawnflags & 32 && player->client->ps.stats[STAT_MOVEMENTSTYLE] != MV_SLICK) { //Spawnflags 4 deadstops them if they are traveling in this direction... sad hack to let people retroactively fix maps without barriers 
 			if (trigger->speed == 0 && player->client->ps.velocity[0] > player->client->ps.speed + 20) {
 				player->client->ps.velocity[0] = player->client->ps.speed;
 			}

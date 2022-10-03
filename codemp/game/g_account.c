@@ -1392,7 +1392,7 @@ static void G_UpdateOurLocalRun(sqlite3 * db, int seasonOldRank_self, int season
 		CALL_SQLITE (finalize(stmt));
 	}
 	else {
-		sql = "UPDATE LocalRun SET duration_ms = ?, topspeed = ?, average = ?, end_time = ?, rank = ?, season_rank = ?, last_update = ? WHERE username = ? AND coursename = ? AND style = ? AND season = ?";
+		sql = "UPDATE LocalRun SET duration_ms = ?, topspeed = ?, average = ?, end_time = ?, rank = ?, season_rank = ?, last_update = ?, invalid = 0 WHERE username = ? AND coursename = ? AND style = ? AND season = ?";
 		CALL_SQLITE (prepare_v2 (db, sql, strlen (sql) + 1, & stmt, NULL));
 		CALL_SQLITE (bind_int (stmt, 1, duration_ms_self));
 		CALL_SQLITE (bind_int (stmt, 2, topspeed_self));
@@ -1817,7 +1817,7 @@ void G_AddRaceTime(char *username, char *message, int duration_ms, int style, in
 	CALL_SQLITE(open(LOCAL_DB_PATH, &db));
 
 	sql = "SELECT MIN(duration_ms), season_rank FROM LocalRun WHERE username = ? AND coursename = ? AND style = ? AND season = ? "
-		"UNION ALL SELECT MIN(duration_ms), rank FROM LocalRun WHERE username = ? AND coursename = ? AND style = ?";
+		"UNION ALL SELECT MIN(duration_ms), rank FROM LocalRun WHERE username = ? AND coursename = ? AND style = ? AND invalid != 1";
 	CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 	CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
 	CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
@@ -1941,7 +1941,7 @@ void G_AddRaceTime(char *username, char *message, int duration_ms, int style, in
 		lastDuration = 0;
 
 		//Get global rank, could union this with previous query maybe
-		sql = "SELECT MIN(duration_ms) FROM LocalRun WHERE coursename = ? AND style = ? GROUP BY username ORDER BY duration_ms ASC, end_time ASC, average DESC";
+		sql = "SELECT MIN(duration_ms) FROM LocalRun WHERE coursename = ? AND style = ? AND invalid != 1 GROUP BY username ORDER BY duration_ms ASC, end_time ASC, average DESC";
 		CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 		CALL_SQLITE(bind_text(stmt, 1, coursename, -1, SQLITE_STATIC));
 		CALL_SQLITE(bind_int(stmt, 2, style));
