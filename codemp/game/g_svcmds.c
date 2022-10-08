@@ -837,7 +837,7 @@ static bitInfo_T weaponTweaks[] = { // MAX_WEAPON_TWEAKS tweaks (24)
 	{"Fix dropped mine ammo count"},//25
 	{"JK2 Style Alt Tripmine"},//26
 	{"Projectile Sniper"},//27
-	{"No Spread"},//28
+	{"Tribes tweaks"},//28
 	{"Slow sniper fire rate"},//29
 	{"Make rockets solid for their owners"},//30
 	{"Lower max damage for pistol alt fire"}//31
@@ -1162,7 +1162,9 @@ static bitInfo_T startingItems[] = { // MAX_STARTING_ITEMS tweaks (13)
 	{"E-WEB"},//10
 	{"Cloak"},//11
 	{"Ability to toggle /jetpack"},//12
-	{"Start with armor in duel gametype"}//13
+	{"Start with armor in duel gametype"},//13
+	{"Start with full armor in FFA"},//13
+	{"Start with full health after each kill"}//13
 };
 static const int MAX_STARTING_ITEMS = ARRAY_LEN( startingItems );
 

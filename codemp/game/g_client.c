@@ -4453,9 +4453,11 @@ void ClientSpawn(gentity_t *ent) {
 		client->ps.stats[STAT_ARMOR] = startArmor;
 	}
 	else
-	{
-		client->ps.stats[STAT_ARMOR] = client->ps.stats[STAT_MAX_HEALTH] * 0.25;
-		//Clan Arena starting armor/hp here?
+	{//Clan Arena starting armor/hp here
+		if (g_startingItems.integer & (1 << (HI_NUM_HOLDABLE + 2)))//sad
+			client->ps.stats[STAT_ARMOR] = client->ps.stats[STAT_MAX_HEALTH];
+		else
+			client->ps.stats[STAT_ARMOR] = client->ps.stats[STAT_MAX_HEALTH] * 0.25;
 	}
 
 	G_SetOrigin( ent, spawn_origin );

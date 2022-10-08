@@ -2741,6 +2741,19 @@ extern void RunEmplacedWeapon( gentity_t *ent, usercmd_t **ucmd );
 					AddScore( attacker, self->r.currentOrigin, 1 );
 					G_AddSimpleStat(attacker, self, 1);
 					attacker->client->pers.stats.kills++;//JAPRO STATS
+
+					if (g_startingItems.integer & (1 << (HI_NUM_HOLDABLE + 2))) {//sad
+						if (attacker->health > 0 && attacker->health < 100) {
+							if (g_startingItems.integer & (1 << (HI_NUM_HOLDABLE + 2)))//sad
+								attacker->health = attacker->client->ps.stats[STAT_HEALTH] = attacker->client->ps.stats[STAT_ARMOR] = 100;
+							else {
+								attacker->health = attacker->client->ps.stats[STAT_HEALTH] = 100;
+								attacker->client->ps.stats[STAT_ARMOR] = attacker->client->ps.stats[STAT_HEALTH] * 0.25;
+							}
+						}
+					}
+
+
 					if (g_gunGame.integer && !attacker->client->sess.raceMode) {
 						//Print winner, resetscores so we dont fuck up racemode
 						G_GiveGunGameWeapon(attacker->client);

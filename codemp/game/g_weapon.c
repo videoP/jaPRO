@@ -429,6 +429,9 @@ void WP_FireBlasterMissile( gentity_t *ent, vec3_t start, vec3_t dir, qboolean a
 		velocity = 2000;
 		damage = 20;
 	}
+	else if (g_tweakWeapons.integer & WT_TRIBES) {
+		damage = 10;
+	}
 	missile = CreateMissileNew( start, dir, velocity, 10000, ent, altFire, qtrue, qtrue );
 
 	missile->classname = "blaster_proj";
@@ -528,7 +531,7 @@ static void WP_FireBlaster( gentity_t *ent, qboolean altFire, int seed )
 	if ( altFire )
 	{
 		// add some slop to the alt-fire direction
-		if ((g_tweakWeapons.integer & WT_NO_SPREAD) || (ent->client && ent->client->sess.movementStyle == MV_COOP_JKA)) {
+		if ((g_tweakWeapons.integer & WT_TRIBES) || (ent->client && ent->client->sess.movementStyle == MV_COOP_JKA)) {
 			angs[PITCH]	+= crandom() * 0.1;
 			angs[YAW]       += crandom() * 0.1;
 		}
@@ -1362,7 +1365,7 @@ static void WP_FireRepeater( gentity_t *ent, qboolean altFire, int seed )
 	else
 	{
 		// add some slop to the alt-fire direction
-		if (g_tweakWeapons.integer & WT_NO_SPREAD) {
+		if (g_tweakWeapons.integer & WT_TRIBES) {
 			angs[PITCH]	+= crandom() * BLASTER_SPREAD * 0.1;
 			angs[YAW]       += crandom() * BLASTER_SPREAD * 0.1;
 		}
@@ -4274,6 +4277,10 @@ static void WP_FireConcussion( gentity_t *ent )
 	int		damage	= CONC_DAMAGE;
 	float	vel = CONC_VELOCITY;
 	gentity_t *missile;
+
+	if (g_tweakWeapons.integer & WT_TRIBES) {
+		vel = 2275;
+	}
 
 	//hold us still for a bit
 	//ent->client->ps.pm_time = 300;
