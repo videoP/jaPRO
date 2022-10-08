@@ -430,7 +430,8 @@ void WP_FireBlasterMissile( gentity_t *ent, vec3_t start, vec3_t dir, qboolean a
 		damage = 20;
 	}
 	else if (g_tweakWeapons.integer & WT_TRIBES) {
-		damage = 10;
+		velocity = 10440;//10440 but thats too fast?
+		damage = 9;
 	}
 	missile = CreateMissileNew( start, dir, velocity, 10000, ent, altFire, qtrue, qtrue );
 
