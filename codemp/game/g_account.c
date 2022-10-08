@@ -1203,7 +1203,8 @@ void G_GetRaceScore(int id, char *username, char *coursename, int style, int sea
 
 	//can we index on duration_ms ?
 	//Get global rank - if its a season PB but not a global PB, leave global rank at 0
-	sql = "SELECT id, MIN(duration_ms) AS duration FROM LocalRun WHERE coursename = ? AND style = ? AND invalid != 1 GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC";
+	//don't do this if it's invalid?
+	sql = "SELECT id, MIN(duration_ms) AS duration FROM LocalRun WHERE coursename = ? AND style = ? AND invalid = 0 GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC";
 	CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 	CALL_SQLITE(bind_text(stmt, 1, coursename, -1, SQLITE_STATIC));
 	CALL_SQLITE(bind_int(stmt, 2, style));
@@ -1817,7 +1818,7 @@ void G_AddRaceTime(char *username, char *message, int duration_ms, int style, in
 	CALL_SQLITE(open(LOCAL_DB_PATH, &db));
 
 	sql = "SELECT MIN(duration_ms), season_rank FROM LocalRun WHERE username = ? AND coursename = ? AND style = ? AND season = ? "
-		"UNION ALL SELECT MIN(duration_ms), rank FROM LocalRun WHERE username = ? AND coursename = ? AND style = ? AND invalid != 1";
+		"UNION ALL SELECT MIN(duration_ms), rank FROM LocalRun WHERE username = ? AND coursename = ? AND style = ? AND invalid = 0";
 	CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 	CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
 	CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
@@ -1879,7 +1880,7 @@ void G_AddRaceTime(char *username, char *message, int duration_ms, int style, in
 		int duration, lastDuration = 0;
 
 		sql = "SELECT COUNT(*) FROM LocalRun WHERE coursename = ? AND style = ? AND season = ? "
-			"UNION ALL SELECT COUNT(DISTINCT username) FROM LocalRun WHERE coursename = ? AND style = ? AND invalid != 1"; //entries ?
+			"UNION ALL SELECT COUNT(DISTINCT username) FROM LocalRun WHERE coursename = ? AND style = ? AND invalid = 0"; //entries ?
 		CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 		CALL_SQLITE(bind_text(stmt, 1, coursename, -1, SQLITE_STATIC));
 		CALL_SQLITE(bind_int(stmt, 2, style));
@@ -1941,7 +1942,7 @@ void G_AddRaceTime(char *username, char *message, int duration_ms, int style, in
 		lastDuration = 0;
 
 		//Get global rank, could union this with previous query maybe
-		sql = "SELECT MIN(duration_ms) FROM LocalRun WHERE coursename = ? AND style = ? AND invalid != 1 GROUP BY username ORDER BY duration_ms ASC, end_time ASC, average DESC";
+		sql = "SELECT MIN(duration_ms) FROM LocalRun WHERE coursename = ? AND style = ? AND invalid = 0 GROUP BY username ORDER BY duration_ms ASC, end_time ASC, average DESC";
 		CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
 		CALL_SQLITE(bind_text(stmt, 1, coursename, -1, SQLITE_STATIC));
 		CALL_SQLITE(bind_int(stmt, 2, style));
@@ -5292,11 +5293,11 @@ void Cmd_NotCompleted_f(gentity_t *ent) {
 int G_AdminAllowed(gentity_t* ent, unsigned int adminCmd, qboolean cheatAllowed, qboolean raceAllowed, char* cmdName);
 void Cmd_InvalidateRace_f(gentity_t* ent)
 {
-	char username[16], coursename[40], styleStr[16], season[8];
+	char username[16], coursename[40], styleStr[16], season[8], mode[8];
 	int i, style;
 
-	if (trap->Argc() != 5) {
-		trap->SendServerCommand(ent - g_entities, "print \"Usage: /flagRecord <username> <coursename> <style> <season>. Use * in place of space in the coursename.\n\"");
+	if (trap->Argc() != 6) {
+		trap->SendServerCommand(ent - g_entities, "print \"Usage: /flagRecord <username> <coursename> <style> <season> <mode: f, u, d>. Use * in place of space in the coursename.\n\"");
 		//flagRecord kane racearena_pro*(dash1) jka
 		return;
 	}
@@ -5308,6 +5309,7 @@ void Cmd_InvalidateRace_f(gentity_t* ent)
 	trap->Argv(2, coursename, sizeof(coursename));
 	trap->Argv(3, styleStr, sizeof(styleStr));
 	trap->Argv(4, season, sizeof(season));
+	trap->Argv(5, mode, sizeof(mode));
 
 	for (i = 0; i < strlen(coursename); i++) {//Replace / in mapname with _ since we cant have a file named mp/duel1.cfg etc.
 		if (coursename[i] == '*')
@@ -5327,7 +5329,7 @@ void Cmd_InvalidateRace_f(gentity_t* ent)
 
 	//Com_Printf("%s - %s - %s - %s\n", username, coursename, style, season);
 
-	{
+	if (!Q_stricmp(mode, "f")) {
 		sqlite3* db;
 		char* sql;
 		sqlite3_stmt* stmt;
@@ -5354,6 +5356,72 @@ void Cmd_InvalidateRace_f(gentity_t* ent)
 		s = sqlite3_step(stmt);
 		if (s == SQLITE_DONE)
 			trap->SendServerCommand(ent - g_entities, "print \"Record flagged?\n\"");
+		else
+			G_ErrorPrint("ERROR: SQL Update Failed (Svcmd_InvalidateRace_f 1)", s);
+		CALL_SQLITE(finalize(stmt));
+
+		CALL_SQLITE(close(db));
+	}
+	else if (!Q_stricmp(mode, "u")) {
+		sqlite3* db;
+		char* sql;
+		sqlite3_stmt* stmt;
+		int s;
+
+		CALL_SQLITE(open(LOCAL_DB_PATH, &db));
+
+		if (!Q_stricmp(season, "-1")) {
+			sql = "UPDATE LocalRun SET invalid = 0 WHERE username = ? AND coursename = ? AND style = ? AND season < 5";
+			CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+			CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_int(stmt, 3, style));
+		}
+		else {
+			sql = "UPDATE LocalRun SET invalid = 0 WHERE username = ? AND coursename = ? AND style = ? AND season = ?";
+			CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+			CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_int(stmt, 3, style));
+			CALL_SQLITE(bind_text(stmt, 4, season, -1, SQLITE_STATIC));
+		}
+
+		s = sqlite3_step(stmt);
+		if (s == SQLITE_DONE)
+			trap->SendServerCommand(ent - g_entities, "print \"Record unflagged?\n\"");
+		else
+			G_ErrorPrint("ERROR: SQL Update Failed (Svcmd_InvalidateRace_f 1)", s);
+		CALL_SQLITE(finalize(stmt));
+
+		CALL_SQLITE(close(db));
+	}
+	else if (!Q_stricmp(mode, "d")) {
+		sqlite3* db;
+		char* sql;
+		sqlite3_stmt* stmt;
+		int s;
+
+		CALL_SQLITE(open(LOCAL_DB_PATH, &db));
+
+		if (!Q_stricmp(season, "-1")) {
+			sql = "UPDATE LocalRun SET invalid = 2 WHERE username = ? AND coursename = ? AND style = ? AND season < 5";
+			CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+			CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_int(stmt, 3, style));
+		}
+		else {
+			sql = "UPDATE LocalRun SET invalid = 2 WHERE username = ? AND coursename = ? AND style = ? AND season = ?";
+			CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+			CALL_SQLITE(bind_text(stmt, 1, username, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_text(stmt, 2, coursename, -1, SQLITE_STATIC));
+			CALL_SQLITE(bind_int(stmt, 3, style));
+			CALL_SQLITE(bind_text(stmt, 4, season, -1, SQLITE_STATIC));
+		}
+
+		s = sqlite3_step(stmt);
+		if (s == SQLITE_DONE)
+			trap->SendServerCommand(ent - g_entities, "print \"Record flagged for deletion?\n\"");
 		else
 			G_ErrorPrint("ERROR: SQL Update Failed (Svcmd_InvalidateRace_f 1)", s);
 		CALL_SQLITE(finalize(stmt));

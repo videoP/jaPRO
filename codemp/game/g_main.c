@@ -2094,7 +2094,7 @@ void PrintStats(int client) {
 	Q_strcat(msg, sizeof(msg), lDmgTaken);
 	Q_strcat(msg, sizeof(msg), lDmgNet);
 	Q_strcat(msg, sizeof(msg), lDmgPerDeath);
-	if (level.gametype == GT_TEAM)
+	if (level.gametype == GT_TEAM && g_friendlyFire.value)
 		Q_strcat (msg, sizeof(msg), lTK);
 	if (level.gametype == GT_CTF || level.gametype == GT_CTY) {
 		Q_strcat(msg, sizeof(msg), lCaptures);
