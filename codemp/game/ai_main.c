@@ -4589,6 +4589,8 @@ float G_NewBotAIGetProjectileSpeed(int weapon, qboolean altFire) {
 
 	if (weapon == WP_BRYAR_OLD || weapon == WP_BRYAR_PISTOL || (weapon == WP_REPEATER && !altFire))
 		projectileSpeed = 1600;
+	else if (weapon == WP_BLASTER && (g_tweakWeapons.integer & WT_TRIBES))
+		projectileSpeed = 10440;
 	else if (weapon == WP_BLASTER)
 		projectileSpeed = 2300;
 	else if (weapon == WP_DISRUPTOR && (g_tweakWeapons.integer & WT_PROJ_SNIPER))
@@ -4611,6 +4613,8 @@ float G_NewBotAIGetProjectileSpeed(int weapon, qboolean altFire) {
 		projectileSpeed = 900;
 	else if (weapon == WP_ROCKET_LAUNCHER && altFire)
 		projectileSpeed = 450;
+	else if (weapon == WP_CONCUSSION && !altFire && (g_tweakWeapons.integer & WT_TRIBES))
+		projectileSpeed = 2275;
 	else if (weapon == WP_CONCUSSION && !altFire)
 		projectileSpeed = 3000;
 	else if (weapon == WP_THERMAL)

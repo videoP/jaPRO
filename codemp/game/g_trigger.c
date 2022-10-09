@@ -1978,7 +1978,7 @@ void NewPush(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO Tim
 			}
 			return;
 		}
-		if (trigger->spawnflags & 64 && (player->client->ps.velocity[0] || player->client->ps.velocity[1])) { //block dash redirects
+		if ((trigger->spawnflags & 64) && (player->client->ps.velocity[0] || player->client->ps.velocity[1])) { //block dash redirects
 			player->client->ps.stats[STAT_WJTIME] = 500;
 			player->client->ps.stats[STAT_DASHTIME] = 500;
 		}
