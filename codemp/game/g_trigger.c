@@ -1980,8 +1980,8 @@ void NewPush(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO Tim
 				vec3_t xyspeed;
 				float hspeed, cut;
 
-				xyspeed[0] = pm->ps->velocity[0];
-				xyspeed[1] = pm->ps->velocity[1];
+				xyspeed[0] = player->client->ps.velocity[0];
+				xyspeed[1] = player->client->ps.velocity[1];
 				xyspeed[2] = 0;
 
 				hspeed = VectorLength(xyspeed);
