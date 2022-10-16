@@ -1337,6 +1337,7 @@ typedef enum //movementstyle enum
 	MV_COOP_JKA,
 #endif
 	MV_OCPM,
+	MV_TRIBES,
 	MV_NUMSTYLES
 } movementStyle_e;
 

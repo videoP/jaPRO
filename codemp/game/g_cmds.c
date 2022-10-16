@@ -6613,7 +6613,7 @@ static void Cmd_MovementStyle_f(gentity_t *ent)
 		return;
 
 	if (trap->Argc() != 2) {
-		trap->SendServerCommand( ent-g_entities, "print \"Usage: /move <siege, jka, qw, cpm, q3, pjk, wsw, rjq3, rjcpm, swoop, jetpack, speed, sp, slick, botcpm, or coop>.\n\"" );
+		trap->SendServerCommand( ent-g_entities, "print \"Usage: /move <siege, jka, qw, cpm, ocpm, q3, pjk, wsw, rjq3, rjcpm, swoop, jetpack, speed, sp, slick, botcpm, or coop>.\n\"" );
 		return;
 	}
 
@@ -8241,6 +8241,8 @@ void Cmd_ServerConfig_f(gentity_t *ent) //loda fixme fix indenting on this, make
 		Q_strcat(buf, sizeof(buf), "   ^5SP style movement\n");
 	else if (g_movementStyle.integer == MV_SLICK)
 		Q_strcat(buf, sizeof(buf), "   ^5Slick style movement\n");
+	else if (g_movementStyle.integer == MV_TRIBES)
+		Q_strcat(buf, sizeof(buf), "   ^5Tribes style movement\n");
 	if (g_fixRoll.integer == 1)
 		Q_strcat(buf, sizeof(buf), "   ^5Tweaked roll\n"); // idk what the fuck this actually does to roll
 	else if (g_fixRoll.integer == 2)

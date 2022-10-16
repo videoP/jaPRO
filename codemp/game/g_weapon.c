@@ -1291,9 +1291,15 @@ static void WP_RepeaterMainFire( gentity_t *ent, vec3_t dir )
 //---------------------------------------------------------
 {
 	int	damage	= REPEATER_DAMAGE;
+	float vel = REPEATER_VELOCITY;
 
 //[JAPRO - Serverside - Weapons - Add inheritance to repeater main fire]
-	gentity_t *missile = CreateMissileNew( muzzle, dir, REPEATER_VELOCITY, 10000, ent, qfalse, qtrue, qtrue );
+
+	if (g_tweakWeapons.integer & WT_TRIBES) {
+		vel = 2200;
+	}
+
+	gentity_t *missile = CreateMissileNew( muzzle, dir, vel, 10000, ent, qfalse, qtrue, qtrue );
 
 	missile->classname = "repeater_proj";
 	missile->s.weapon = WP_REPEATER;
@@ -1315,7 +1321,15 @@ static void WP_RepeaterAltFire( gentity_t *ent )
 //---------------------------------------------------------
 {
 //[JAPRO - Serverside - Weapons - Add inheritance to repeater alt fire]
-	gentity_t *missile = CreateMissileNew( muzzle, forward, REPEATER_ALT_VELOCITY, 10000, ent, qtrue, qtrue, qtrue );
+	gentity_t* missile;
+
+	float vel = REPEATER_ALT_VELOCITY;
+
+	if (g_tweakWeapons.integer & WT_TRIBES) {
+		vel = 1400;
+	}
+	
+	CreateMissileNew(muzzle, forward, vel, 10000, ent, qtrue, qtrue, qtrue);
 
 	missile->damage = REPEATER_ALT_DAMAGE;
 	missile->splashDamage = REPEATER_ALT_SPLASH_DAMAGE;
@@ -1712,6 +1726,11 @@ static void WP_FlechetteMainFire( gentity_t *ent, int seed )
 	vec3_t		fwd, angs;
 	gentity_t	*missile;
 	int i;
+	float spread = 0.65f;
+
+	if (g_tweakWeapons.integer & WT_TRIBES) {
+		spread = 0.25f;
+	}
 
 	for (i = 0; i < FLECHETTE_SHOTS; i++ )
 	{
@@ -1732,20 +1751,20 @@ static void WP_FlechetteMainFire( gentity_t *ent, int seed )
 		}
 		else {
 			if (i == 1) {
-				angs[PITCH] += 0.65f* FLECHETTE_SPREAD;
-				angs[YAW]	+= 0.65f* FLECHETTE_SPREAD;
+				angs[PITCH] += spread * FLECHETTE_SPREAD;
+				angs[YAW]	+= spread * FLECHETTE_SPREAD;
 			}
 			else if (i == 2) {
-				angs[PITCH] += 0.65f* FLECHETTE_SPREAD;
-				angs[YAW]	-= 0.65f* FLECHETTE_SPREAD;
+				angs[PITCH] += spread * FLECHETTE_SPREAD;
+				angs[YAW]	-= spread * FLECHETTE_SPREAD;
 			}
 			else if (i == 3) {
-				angs[PITCH] -= 0.65f* FLECHETTE_SPREAD;
-				angs[YAW]	+= 0.65f* FLECHETTE_SPREAD;
+				angs[PITCH] -= spread * FLECHETTE_SPREAD;
+				angs[YAW]	+= spread * FLECHETTE_SPREAD;
 			}
 			else if (i == 4) {
-				angs[PITCH] -= 0.65f* FLECHETTE_SPREAD;
-				angs[YAW]	-= 0.65f* FLECHETTE_SPREAD;
+				angs[PITCH] -= spread * FLECHETTE_SPREAD;
+				angs[YAW]	-= spread * FLECHETTE_SPREAD;
 			}
 		}
 //[JAPRO - Serverside - Weapons - Tweak weapons Remove Flechette Randomness - End]

@@ -367,7 +367,7 @@ QINLINE int PM_GetMovePhysics(void)
 #if _GAME
 	if (pm->ps->stats[STAT_RACEMODE])
 		return (pm->ps->stats[STAT_MOVEMENTSTYLE]);
-	else if ((g_movementStyle.integer >= MV_SIEGE && g_movementStyle.integer <= MV_WSW) || (g_movementStyle.integer == MV_SP || g_movementStyle.integer == MV_SLICK || g_movementStyle.integer == MV_OCPM))
+	else if ((g_movementStyle.integer >= MV_SIEGE && g_movementStyle.integer <= MV_WSW) || (g_movementStyle.integer == MV_SP || g_movementStyle.integer == MV_SLICK || g_movementStyle.integer == MV_OCPM || g_movementStyle.integer == MV_TRIBES))
 		return (g_movementStyle.integer);
 	else if (g_movementStyle.integer < MV_SIEGE)
 		return 0;
@@ -1181,7 +1181,7 @@ static void PM_Friction( void ) {
 	{
 		// apply ground friction
 		if ( pm->waterlevel <= 1 ) {
-			if (pml.walking && !(pml.groundTrace.surfaceFlags & SURF_SLICK) && (moveStyle != MV_SLICK || (pm->cmd.buttons & BUTTON_WALKING))) { //Slick style here potentially
+			if (pml.walking && !(pml.groundTrace.surfaceFlags & SURF_SLICK) && (moveStyle != MV_SLICK || (pm->cmd.buttons & BUTTON_WALKING)) && (moveStyle != MV_TRIBES && !(pm->cmd.buttons & BUTTON_WALKING)) ) { //Slick style here potentially
 				// if getting knocked back, no friction
 				if ( ! (pm->ps->pm_flags & PMF_TIME_KNOCKBACK) ) { //GB?
 					control = speed < pm_stopspeed ? pm_stopspeed : speed;
