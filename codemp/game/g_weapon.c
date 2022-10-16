@@ -1292,14 +1292,15 @@ static void WP_RepeaterMainFire( gentity_t *ent, vec3_t dir )
 {
 	int	damage	= REPEATER_DAMAGE;
 	float vel = REPEATER_VELOCITY;
+	gentity_t* missile;
 
 //[JAPRO - Serverside - Weapons - Add inheritance to repeater main fire]
 
 	if (g_tweakWeapons.integer & WT_TRIBES) {
-		vel = 2200;
+		vel = 2200 * g_projectileVelocityScale.value;
 	}
 
-	gentity_t *missile = CreateMissileNew( muzzle, dir, vel, 10000, ent, qfalse, qtrue, qtrue );
+	missile = CreateMissileNew( muzzle, dir, vel, 10000, ent, qfalse, qtrue, qtrue );
 
 	missile->classname = "repeater_proj";
 	missile->s.weapon = WP_REPEATER;
@@ -1326,10 +1327,10 @@ static void WP_RepeaterAltFire( gentity_t *ent )
 	float vel = REPEATER_ALT_VELOCITY;
 
 	if (g_tweakWeapons.integer & WT_TRIBES) {
-		vel = 1400;
+		vel = 1400 * g_projectileVelocityScale.value;
 	}
 	
-	CreateMissileNew(muzzle, forward, vel, 10000, ent, qtrue, qtrue, qtrue);
+	missile = CreateMissileNew(muzzle, forward, vel, 10000, ent, qtrue, qtrue, qtrue);
 
 	missile->damage = REPEATER_ALT_DAMAGE;
 	missile->splashDamage = REPEATER_ALT_SPLASH_DAMAGE;
