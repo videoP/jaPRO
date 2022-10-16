@@ -1181,8 +1181,9 @@ static void PM_Friction( void ) {
 	{
 		// apply ground friction
 		if ( pm->waterlevel <= 1 ) {
-			if (pml.walking && !(pml.groundTrace.surfaceFlags & SURF_SLICK) && (moveStyle != MV_SLICK || (pm->cmd.buttons & BUTTON_WALKING)) && (moveStyle != MV_TRIBES && !(pm->cmd.buttons & BUTTON_WALKING)) ) { //Slick style here potentially
-				// if getting knocked back, no friction
+			if (pml.walking && !(pml.groundTrace.surfaceFlags & SURF_SLICK) && ((moveStyle != MV_SLICK || (pm->cmd.buttons & BUTTON_WALKING)) && (moveStyle != MV_TRIBES || !(pm->cmd.buttons & BUTTON_WALKING))) ) { //Slick style here potentially
+				//do this unless its (slick and walking) or unless its (tribes and not walking)
+																																																					  // if getting knocked back, no friction
 				if ( ! (pm->ps->pm_flags & PMF_TIME_KNOCKBACK) ) { //GB?
 					control = speed < pm_stopspeed ? pm_stopspeed : speed;
 					drop += control*realfriction*pml.frametime;
