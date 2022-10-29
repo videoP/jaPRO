@@ -1159,7 +1159,7 @@ void G_GetRaceScore(int id, char *username, char *coursename, int style, int sea
 }
 #endif
 
-void G_GetRaceScore(int id, char *username, char *coursename, int style, int season, int season_count, int global_count, int time, sqlite3 * db) { //Need to use transactions here or something
+void G_GetRaceScore(int id, char *username, char *coursename, int style, int season, int invalid, int season_count, int global_count, int time, sqlite3 * db) { //Need to use transactions here or something
 	char * sql;
 	sqlite3_stmt * stmt;
 	int s, season_rank = 0, global_rank = 0, i = 1;
@@ -1204,35 +1204,37 @@ void G_GetRaceScore(int id, char *username, char *coursename, int style, int sea
 	//can we index on duration_ms ?
 	//Get global rank - if its a season PB but not a global PB, leave global rank at 0
 	//don't do this if it's invalid?
-	sql = "SELECT id, MIN(duration_ms) AS duration FROM LocalRun WHERE coursename = ? AND style = ? AND invalid = 0 GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC";
-	CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
-	CALL_SQLITE(bind_text(stmt, 1, coursename, -1, SQLITE_STATIC));
-	CALL_SQLITE(bind_int(stmt, 2, style));
-	while (1) {
-		s = sqlite3_step(stmt);
-		if (s == SQLITE_ROW) {
-			if (style == MV_COOP_JKA) {
-				duration = sqlite3_column_int(stmt, 1);
-				if (duration == lastDuration) {
-					i--;
+	if (!invalid) {
+		sql = "SELECT id, MIN(duration_ms) AS duration FROM LocalRun WHERE coursename = ? AND style = ? AND invalid = 0 GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC";
+		CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+		CALL_SQLITE(bind_text(stmt, 1, coursename, -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_int(stmt, 2, style));
+		while (1) {
+			s = sqlite3_step(stmt);
+			if (s == SQLITE_ROW) {
+				if (style == MV_COOP_JKA) {
+					duration = sqlite3_column_int(stmt, 1);
+					if (duration == lastDuration) {
+						i--;
+					}
+					lastDuration = duration;
 				}
-				lastDuration = duration;
-			}
 
-			if (id == sqlite3_column_int(stmt, 0)) {
-				global_rank = i;
+				if (id == sqlite3_column_int(stmt, 0)) {
+					global_rank = i;
+					break;
+				}
+				i++;
+			}
+			else if (s == SQLITE_DONE)
+				break;
+			else {
+				G_ErrorPrint("ERROR: SQL Select Failed (G_GetRaceScore 4)", s);
 				break;
 			}
-			i++;
 		}
-		else if (s == SQLITE_DONE)
-			break;
-		else {
-			G_ErrorPrint("ERROR: SQL Select Failed (G_GetRaceScore 4)", s);
-			break;
-		}
+		CALL_SQLITE(finalize(stmt));
 	}
-	CALL_SQLITE(finalize(stmt));
 
 	//Save rank into row
 	sql = "UPDATE LocalRun SET rank = ?, entries = ?, season_rank = ?, season_entries = ?, last_update = ? WHERE id = ?";
@@ -1302,8 +1304,9 @@ void SV_RebuildRaceRanks_f(void) {
 	CALL_SQLITE(open(LOCAL_DB_PATH, &db));
 	
 	//This doesn't have to be ordered at all does it?
-	sql = "SELECT LR1.id, LR1.username, LR1.coursename, LR1.style, LR1.season, LR2.season_count, LR3.global_count FROM "
-		"(SELECT id, username, coursename, style, season FROM LocalRun) AS LR1 "
+	//also select invalid, pass thru to get racescore, and skip global rank calc if its invalid
+	sql = "SELECT LR1.id, LR1.username, LR1.coursename, LR1.style, LR1.season, LR1.invalid, LR2.season_count, LR3.global_count FROM "
+		"(SELECT id, username, coursename, style, season, invalid FROM LocalRun) AS LR1 "
 		"LEFT JOIN "
 		"(SELECT coursename, style, season, COUNT(*) AS season_count FROM LocalRun GROUP BY coursename, style, season) AS LR2 "
 		"ON LR1.style = LR2.style AND LR1.coursename = LR2.coursename AND LR1.season = LR2.season "
@@ -1315,7 +1318,7 @@ void SV_RebuildRaceRanks_f(void) {
 		s = sqlite3_step(stmt);
 		if (s == SQLITE_ROW) {
 			G_GetRaceScore(sqlite3_column_int(stmt, 0), (char*)sqlite3_column_text(stmt, 1), (char*)sqlite3_column_text(stmt, 2),
-				sqlite3_column_int(stmt, 3), sqlite3_column_int(stmt, 4), sqlite3_column_int(stmt, 5), sqlite3_column_int(stmt, 6), rawtime, db);
+				sqlite3_column_int(stmt, 3), sqlite3_column_int(stmt, 4), sqlite3_column_int(stmt, 5), sqlite3_column_int(stmt, 6), sqlite3_column_int(stmt, 7), rawtime, db);
 
 			//G_UpdateUnlocks((char*)sqlite3_column_text(stmt, 1), (char*)sqlite3_column_text(stmt, 2), sqlite3_column_int(stmt, 3), NULL, db);
 		}
@@ -6174,9 +6177,9 @@ void Cmd_DFTop10_f(gentity_t *ent) {
 		//fix by grouping by username here? and using min() so it shows right one? who knows if that will work
 		//could be cheaper by using where rank != 0 instead of min(duration_ms) but w/e
 		if (season == -1)
-			sql = "SELECT username, MIN(duration_ms) AS duration, topspeed, average, end_time, invalid FROM LocalRun WHERE coursename = ? AND style = ? GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC LIMIT ?, 10";
+			sql = "SELECT username, MIN(duration_ms) AS duration, topspeed, average, end_time FROM LocalRun WHERE coursename = ? AND style = ? AND invalid = 0 GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC LIMIT ?, 10";
 		else 
-			sql = "SELECT username, MIN(duration_ms) AS duration, topspeed, average, end_time, invalid FROM LocalRun WHERE coursename = ? AND style = ? AND season = ? GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC LIMIT ?, 10";
+			sql = "SELECT username, MIN(duration_ms) AS duration, topspeed, average, end_time FROM LocalRun WHERE coursename = ? AND style = ? AND season = ? GROUP BY username ORDER BY duration ASC, end_time ASC, average DESC LIMIT ?, 10";
 		CALL_SQLITE (prepare_v2 (db, sql, strlen (sql) + 1, & stmt, NULL));
 		CALL_SQLITE (bind_text (stmt, 1, fullCourseName, -1, SQLITE_STATIC));
 		CALL_SQLITE (bind_int (stmt, 2, style));
@@ -6210,9 +6213,9 @@ void Cmd_DFTop10_f(gentity_t *ent) {
 				else {
 					Q_strncpyz(dateStrColored, dateStr, sizeof(dateStrColored));
 				}
-				if (sqlite3_column_int(stmt, 5) == 1) //temp, make flagged runs red until we can figure out how to handle them
-					tmpMsg = va("^5%2i^3: ^3%-18s ^1%-12s ^3%-11i ^3%-12i %s\n", row+start, sqlite3_column_text(stmt, 0), timeStr, sqlite3_column_int(stmt, 2), sqlite3_column_int(stmt, 3), dateStrColored);
-				else
+				//if (sqlite3_column_int(stmt, 5) == 1) //temp, make flagged runs red until we can figure out how to handle them
+					//tmpMsg = va("^5%2i^3: ^3%-18s ^1%-12s ^3%-11i ^3%-12i %s\n", row+start, sqlite3_column_text(stmt, 0), timeStr, sqlite3_column_int(stmt, 2), sqlite3_column_int(stmt, 3), dateStrColored);
+				//else
 					tmpMsg = va("^5%2i^3: ^3%-18s ^3%-12s ^3%-11i ^3%-12i %s\n", row + start, sqlite3_column_text(stmt, 0), timeStr, sqlite3_column_int(stmt, 2), sqlite3_column_int(stmt, 3), dateStrColored);
 				if (strlen(msg) + strlen(tmpMsg) >= sizeof( msg)) {
 					trap->SendServerCommand( ent-g_entities, va("print \"%s\"", msg));
