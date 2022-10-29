@@ -2654,10 +2654,16 @@ static void WP_FireRocket( gentity_t *ent, qboolean altFire )
 		}
 	}
 
-	if (ent->client && ent->client->sess.raceMode) {
-		q3style = qtrue;
-		damage = splashDamage = 100; //force default dmg/vel for racers
-		vel = 900;
+	if (ent->client) {
+		if (ent->client->sess.raceMode) {
+			q3style = qtrue;
+			damage = splashDamage = 100; //force default dmg/vel for racers
+			vel = 900;
+		}
+		else if (g_tweakWeapons.integer & WT_TRIBES) {
+			damage = splashDamage = 90;
+			vel = 2040;
+		}
 	}
 
 	if ( altFire )
@@ -2708,6 +2714,9 @@ static void WP_FireRocket( gentity_t *ent, qboolean altFire )
 		ent->client->ps.rocketLockIndex = ENTITYNUM_NONE;
 		ent->client->ps.rocketLockTime = 0;
 		ent->client->ps.rocketTargetTime = 0;
+
+		if (g_tweakWeapons.integer & WT_TRIBES)
+			missile->s.pos.trType = TR_GRAVITY;
 	}
 	else if (altFire && (g_tweakWeapons.integer & WT_ROCKET_REDEEMER) && !ent->client->sess.raceMode)
 	{
