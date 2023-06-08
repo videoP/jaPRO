@@ -7077,8 +7077,10 @@ static void Cmd_Practice_f(gentity_t *ent)
 			trap->SendServerCommand(ent-g_entities, "print \"Practice mode enabled: timer reset.\n\"");
 			ResetPlayerTimers(ent, qtrue);
 		}
-		else 
-			trap->SendServerCommand(ent-g_entities, "print \"Practice mode enabled.\n\"");
+		else {
+			trap->SendServerCommand(ent - g_entities, "print \"Practice mode enabled.\n\"");
+			ResetPlayerTimers(ent, qfalse);
+		}
 	}
 	else {
 		ent->client->ps.powerups[PW_YSALAMIRI] = 0;
@@ -7086,8 +7088,10 @@ static void Cmd_Practice_f(gentity_t *ent)
 			trap->SendServerCommand(ent-g_entities, "print \"Practice mode disabled: timer reset.\n\"");
 			ResetPlayerTimers(ent, qtrue);
 		}
-		else
-			trap->SendServerCommand(ent-g_entities, "print \"Practice mode disabled.\n\"");
+		else {
+			trap->SendServerCommand(ent - g_entities, "print \"Practice mode disabled.\n\"");
+			ResetPlayerTimers(ent, qfalse);
+		}
 	}
 }
 
