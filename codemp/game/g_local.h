@@ -1178,6 +1178,9 @@ struct gclient_s {
 	int			lastSpottedTime;
 	short		savedJumpLevel;//rabbit
 
+	int			midRunTeleMarkCount;
+	int			midRunTeleCount;
+
 	vec3_t		lastVelocity;
 
 	//Testunlagged

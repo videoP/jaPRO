@@ -1584,6 +1584,13 @@ void PrintRaceTime(char *username, char *playername, char *message, char *style,
 	else
 		Com_sprintf(messageStr, sizeof(messageStr), "^%iCompleted", color);
 
+	if (level.clients[clientNum].ps.stats[STAT_RESTRICTIONS] & JAPRO_RESTRICT_ALLOWTELES) { //print number of teles?
+		if (level.clients[clientNum].midRunTeleCount < 1)
+			Q_strcat(messageStr, sizeof(messageStr), " (PRO)");
+		else
+			Q_strcat(messageStr, sizeof(messageStr), va(" with %i TPs & %i CPs", level.clients[clientNum].midRunTeleCount, level.clients[clientNum].midRunTeleMarkCount));
+	}
+
 	if (valid) {
 		if (global_newRank == 1) { //was 1 when it shouldnt have been.. ?
 			Q_strncpyz(awardString, "^5(WR)", sizeof(awardString));

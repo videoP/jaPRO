@@ -745,6 +745,9 @@ void QINLINE ResetSpecificPlayerTimers(gentity_t* ent, qboolean print) {
 
 	ent->client->pers.stats.lastResetTime = level.time; //well im just not sure
 
+	ent->client->midRunTeleCount = 0;
+	ent->client->midRunTeleMarkCount = 0;
+
 	if (wasReset && print)
 		//trap->SendServerCommand( ent-g_entities, "print \"Timer reset!\n\""); //console spam is bad
 		trap->SendServerCommand(ent - g_entities, "cp \"Timer reset!\n\n\n\n\n\n\n\n\n\n\n\n\"");
@@ -7154,6 +7157,7 @@ void Cmd_Amtelemark_f(gentity_t *ent)
 				trap->SendServerCommand(ent - g_entities, "print \"You must be on the ground to telemark midrun!\n\"");
 				return;
 			}
+			ent->client->midRunTeleMarkCount++;
 		}
 
 		VectorCopy(ent->client->ps.origin, ent->client->pers.telemarkOrigin);
