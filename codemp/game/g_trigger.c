@@ -1881,6 +1881,8 @@ void Use_target_restrict_on(gentity_t *trigger, gentity_t *other, gentity_t *pla
 					player->client->ps.fd.forcePowerLevel[FP_LEVITATION] = jumplevel;
 					trap->SendServerCommand(player - g_entities, va("print \"Jumplevel updated (%i).\n\"", jumplevel));
 				}
+				if (player->client->ps.stats[STAT_RESTRICTIONS] & JAPRO_RESTRICT_BHOP)
+					player->client->ps.stats[STAT_RESTRICTIONS] &= ~JAPRO_RESTRICT_BHOP;
 			}
 		}
 	}
