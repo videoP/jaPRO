@@ -11,7 +11,7 @@
 #include "curl/easy.h"
 #endif
 
-#define LOCAL_DB_PATH "japro/data.db"
+static char LOCAL_DB_PATH[MAX_QPATH];
 //#define GLOBAL_DB_PATH sv_globalDBPath.string
 //#define MAX_TMP_RACELOG_SIZE 80 * 1024
 
@@ -7044,6 +7044,19 @@ void InitGameAccountStuff( void ) { //Called every mapload , move the create tab
     char * sql;
     sqlite3_stmt * stmt;
 	int s;
+
+	//ok build DB file path from fs_game ?
+	char fs_game[MAX_QPATH];
+	trap->Cvar_VariableStringBuffer("fs_game", fs_game, sizeof(fs_game));
+	if (!VALIDSTRING(fs_game)) {
+		trap->Cvar_VariableStringBuffer("fs_basegame", fs_game, sizeof(fs_game));
+
+		if (!VALIDSTRING(fs_game)) {
+			Q_strncpyz(fs_game, "japro", sizeof(fs_game)); //fall back to this i guess
+		}
+	}
+
+	Com_sprintf(LOCAL_DB_PATH, sizeof(LOCAL_DB_PATH), "%s/data.db", fs_game);
 
 	CALL_SQLITE (open (LOCAL_DB_PATH, & db));
 
