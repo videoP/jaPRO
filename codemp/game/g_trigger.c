@@ -1917,6 +1917,12 @@ void Use_target_restrict_on(gentity_t *trigger, gentity_t *other, gentity_t *pla
 		player->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_DOUBLEJUMP;
 	}
 	if (trigger->spawnflags & RESTRICT_FLAG_ALLOWTELES) {
+		if (!(player->client->ps.stats[STAT_RESTRICTIONS] & JAPRO_RESTRICT_ALLOWTELES)) { //Reset their telemark if we didn't have it yet
+			player->client->pers.telemarkOrigin[0] = 0;
+			player->client->pers.telemarkOrigin[1] = 0;
+			player->client->pers.telemarkOrigin[2] = 0;
+			player->client->pers.telemarkAngle = 0;
+		}
 		player->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_ALLOWTELES;
 	}
 	if (!trigger->spawnflags) {
