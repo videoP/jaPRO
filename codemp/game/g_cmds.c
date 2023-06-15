@@ -7531,8 +7531,29 @@ void Cmd_Race_f(gentity_t *ent)
 	}
 
 	if (level.gametype != GT_FFA) {
-		trap->SendServerCommand(ent-g_entities, "print \"^5This command is not allowed in this gametype!\n\"");
-		return;
+		if (level.gametype >= GT_TEAM && g_raceMode.integer == 2)
+		{//this is ok
+
+			ent->client->pers.noFollow = qfalse;
+			ent->client->pers.practice = qfalse;
+			ent->r.svFlags &= ~SVF_SINGLECLIENT; //ehh?
+			ent->s.weapon = WP_SABER; //Dont drop our weapon
+			Cmd_ForceChanged_f(ent);//Make sure their jump level is valid.. if leaving racemode :S
+
+			if (ent->client->sess.sessionTeam != TEAM_FREE) {
+				ent->client->sess.raceMode = qtrue;
+				SetTeam(ent, "race", qfalse);
+			}
+			else {
+				ent->client->sess.raceMode = qfalse;
+				SetTeam(ent, "spec", qfalse);
+			}
+			return;//duno..
+		}
+		else {
+			trap->SendServerCommand(ent-g_entities, "print \"^5This command is not allowed in this gametype!\n\"");
+			return;
+		}
 	}
 
 	if (ent->client->sess.raceMode) {//Toggle it
