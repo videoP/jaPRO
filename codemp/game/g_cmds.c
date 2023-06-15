@@ -6947,6 +6947,36 @@ static void Cmd_Ysal_f(gentity_t *ent)
 	}
 }
 
+static void Cmd_ToggleCrouchJump_f(gentity_t *ent)
+{
+	if (!ent->client)
+		return;
+
+	if (!ent->client->pers.practice) {
+		trap->SendServerCommand(ent - g_entities, "print \"You must be in practice mode to use this command!\n\"");
+		return;
+	}
+
+	if (!ent->client->sess.raceMode) {
+		trap->SendServerCommand(ent - g_entities, "print \"You must be in race mode to use this command!\n\""); //Should never happen since cant be in practice w/o racemode? or... w/e
+		return;
+	}
+
+	if (trap->Argc() != 1) {
+		trap->SendServerCommand(ent - g_entities, "print \"Usage: /crouchjump\n\"");
+		return;
+	}
+
+	if (ent->client->ps.stats[STAT_RESTRICTIONS] & JAPRO_RESTRICT_CROUCHJUMP) {
+		ent->client->ps.stats[STAT_RESTRICTIONS] &= ~JAPRO_RESTRICT_CROUCHJUMP;
+		trap->SendServerCommand(ent - g_entities, "print \"HL Crouchclimbing disabled\n\"");
+	}
+	else {
+		ent->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_CROUCHJUMP;
+		trap->SendServerCommand(ent - g_entities, "print \"HL Crouchclimbing enabled\n\"");
+	}
+}
+
 static void Cmd_Launch_f(gentity_t *ent)
 {
 	char xySpeedStr[16], xStr[16], yStr[16], zStr[16], yawStr[16], zSpeedStr[16];
@@ -8733,7 +8763,7 @@ command_t commands[] = {
 
 	{ "register",			Cmd_ACRegister_f,			CMD_NOINTERMISSION },
 
-	{ "rfind",				Cmd_DFFind_f,			CMD_NOINTERMISSION },
+	{ "rfind",				Cmd_DFFind_f,				CMD_NOINTERMISSION },
 	{ "rhardest",			Cmd_DFHardest_f,			CMD_NOINTERMISSION },
 	{ "rlatest",			Cmd_DFRecent_f,				CMD_NOINTERMISSION },
 
@@ -8787,7 +8817,8 @@ command_t commands[] = {
 	{ "where",				Cmd_Where_f,				CMD_NOINTERMISSION },
 
 	{ "whois",				Cmd_ACWhois_f,				0 },
-	{ "ysal",				Cmd_Ysal_f,					CMD_NOINTERMISSION }
+	{ "ysal",				Cmd_Ysal_f,					CMD_NOINTERMISSION },
+	{ "crouchjump",			Cmd_ToggleCrouchJump_f,		CMD_NOINTERMISSION },
 };
 static const size_t numCommands = ARRAY_LEN( commands );
 
