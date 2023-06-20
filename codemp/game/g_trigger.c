@@ -1275,7 +1275,7 @@ qboolean ValidRaceSettings(int restrictions, gentity_t *player)
 		return qfalse;
 	if ((restrictions & (1 << 5)) && (level.gametype == GT_CTF || level.gametype == GT_CTY))//spawnflags 32 is FFA_ONLY
 		return qfalse;
-	if ((player->client->ps.stats[STAT_RESTRICTIONS] & JAPRO_RESTRICT_ALLOWTELES) && !(restrictions & (1 << 6))) //spawnflags 64 is allow_teles 
+	if ((player->client->ps.stats[STAT_RESTRICTIONS] & JAPRO_RESTRICT_ALLOWTELES) && !(restrictions & (1 << 6))) //spawnflags 64 on end trigger is allow_teles 
 		return qfalse;
 
 	return qtrue;
@@ -1490,6 +1490,10 @@ void TimerStart(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO 
 		player->client->pers.telemarkOrigin[1] = 0;
 		player->client->pers.telemarkOrigin[2] = 0;
 		player->client->pers.telemarkAngle = 0;
+
+		//record their tele stats
+		player->client->midRunTeleMarkCount = 0;
+		player->client->midRunTeleCount = 0;
 	}
 
 	if (player->client->sess.raceMode) {
@@ -1749,6 +1753,9 @@ void TimerStop(gentity_t *trigger, gentity_t *player, trace_t *trace) {//JAPRO T
 			if (coopFinished)
 				duelAgainst->client->ps.duelTime = 0;
 		}
+
+		player->client->midRunTeleCount = 0;
+		player->client->midRunTeleMarkCount = 0;
 	}
 	//Set coopstarted to false?
 }
@@ -1869,9 +1876,12 @@ void Use_target_restrict_on(gentity_t *trigger, gentity_t *other, gentity_t *pla
 			const int jumplevel = trigger->count;
 			if (jumplevel >= 1 && jumplevel <= 3) {
 				if (player->client->ps.fd.forcePowerLevel[FP_LEVITATION] != jumplevel) {
+					if (!player->client->savedJumpLevel) //save their original jumplevel
+						player->client->savedJumpLevel = player->client->ps.fd.forcePowerLevel[FP_LEVITATION];
 					player->client->ps.fd.forcePowerLevel[FP_LEVITATION] = jumplevel;
 					trap->SendServerCommand(player - g_entities, va("print \"Jumplevel updated (%i).\n\"", jumplevel));
 				}
+				player->client->ps.stats[STAT_RESTRICTIONS] &= ~JAPRO_RESTRICT_BHOP;
 			}
 		}
 	}
@@ -1903,13 +1913,27 @@ void Use_target_restrict_on(gentity_t *trigger, gentity_t *other, gentity_t *pla
 			G_Sound(player, CHAN_AUTO, G_SoundIndex("sound/player/boon.mp3"));
 		player->client->ps.powerups[PW_YSALAMIRI] = 2147483648 - 1;// Q3_INFINITE;
 	}
-	if (trigger->spawnflags & RESTRICT_FLAG_CROUCHJUMP) {//hl style crouch jump	
+	if (trigger->spawnflags & RESTRICT_FLAG_CROUCHJUMP) {//hl style crouch jump
 		player->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_CROUCHJUMP;
 	}
+	if (trigger->spawnflags & RESTRICT_FLAG_DOUBLEJUMP) {
+		player->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_DOUBLEJUMP;
+	}
 	if (trigger->spawnflags & RESTRICT_FLAG_ALLOWTELES) {
+		if (!(player->client->ps.stats[STAT_RESTRICTIONS] & JAPRO_RESTRICT_ALLOWTELES)) { //Reset their telemark if we didn't have it yet
+			VectorClear(player->client->pers.telemarkOrigin);
+			player->client->pers.telemarkAngle = 0;
+		}
 		player->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_ALLOWTELES;
 	}
 	if (!trigger->spawnflags) {
+		const int jumplevel = (trigger->count && trigger->count >= 1 && trigger->count <= 3) ? trigger->count : 3; //allow count to set jump level for different jump heights
+		if (player->client->ps.fd.forcePowerLevel[FP_LEVITATION] != jumplevel) {
+			if (!player->client->savedJumpLevel) //so we only keep their original jumplevel
+				player->client->savedJumpLevel = player->client->ps.fd.forcePowerLevel[FP_LEVITATION];
+			player->client->ps.fd.forcePowerLevel[FP_LEVITATION] = jumplevel;
+			//trap->SendServerCommand(player - g_entities, va("print \"Jumplevel updated with onlybhop restrict (%i).\n\"", jumplevel));
+		}
 		player->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_BHOP;
 	}
 
@@ -1928,6 +1952,13 @@ void Use_target_restrict_off( gentity_t *trigger, gentity_t *other, gentity_t *p
 	if (player->client->ps.pm_type != PM_NORMAL && player->client->ps.pm_type != PM_FLOAT && player->client->ps.pm_type != PM_FREEZE)
 		return;
 
+	if (trigger->spawnflags & RESTRICT_FLAG_JUMP) { //Restore their original jump level.
+		if (player->client->savedJumpLevel && player->client->ps.fd.forcePowerLevel[FP_LEVITATION] != player->client->savedJumpLevel) {
+			player->client->ps.fd.forcePowerLevel[FP_LEVITATION] = player->client->savedJumpLevel;
+			//trap->SendServerCommand(player - g_entities, va("print \"Restored saved jumplevel (%i).\n\"", player->client->savedJumpLevel));
+			player->client->savedJumpLevel = 0;
+		}
+	}
 	if (trigger->spawnflags & RESTRICT_FLAG_YSAL) {//Give Ysal
 		player->client->ps.powerups[PW_YSALAMIRI] = 0;
 	}
@@ -1937,11 +1968,19 @@ void Use_target_restrict_off( gentity_t *trigger, gentity_t *other, gentity_t *p
 	if (trigger->spawnflags & RESTRICT_FLAG_CROUCHJUMP) {//hl style crouch jump
 		player->client->ps.stats[STAT_RESTRICTIONS] &= ~JAPRO_RESTRICT_CROUCHJUMP;
 	}
+	if (trigger->spawnflags & RESTRICT_FLAG_DOUBLEJUMP) {
+		player->client->ps.stats[STAT_RESTRICTIONS] &= ~JAPRO_RESTRICT_DOUBLEJUMP;
+	}
 	if (trigger->spawnflags & RESTRICT_FLAG_ALLOWTELES) {
 		player->client->ps.stats[STAT_RESTRICTIONS] &= ~JAPRO_RESTRICT_ALLOWTELES;
 	}
 	if (trigger->spawnflags == RESTRICT_FLAG_DISABLE) {
 		player->client->ps.stats[STAT_RESTRICTIONS] &= ~JAPRO_RESTRICT_BHOP;
+		if (player->client->savedJumpLevel && player->client->ps.fd.forcePowerLevel[FP_LEVITATION] != player->client->savedJumpLevel) {
+			player->client->ps.fd.forcePowerLevel[FP_LEVITATION] = player->client->savedJumpLevel;
+			//trap->SendServerCommand(player - g_entities, va("print \"Restored saved jumplevel (%i).\n\"", player->client->savedJumpLevel));
+			player->client->savedJumpLevel = 0;
+		}
 	}
 }
 
@@ -3030,6 +3069,9 @@ void func_timer_use( gentity_t *self, gentity_t *other, gentity_t *activator ) {
 }
 
 void SP_func_timer( gentity_t *self ) {
+	if ((self->spawnflags & 2) && (!g_KOTH.integer || level.gametype != GT_TEAM)) //spawnflag to only use this entity for KOTH
+		return;
+
 	G_SpawnFloat( "random", "1", &self->random);
 	G_SpawnFloat( "wait", "1", &self->wait );
 

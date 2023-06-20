@@ -683,12 +683,16 @@ void QINLINE ResetSpecificPlayerTimers(gentity_t* ent, qboolean print) {
 		wasReset = qtrue;
 
 	if (ent->client->sess.raceMode) {
-		VectorClear(ent->client->ps.velocity); //lel
+		VectorClear(ent->client->ps.velocity);
 		ent->client->ps.duelTime = 0;
-		ent->client->ps.stats[STAT_RESTRICTIONS] = 0; //meh
-		//if (ent->client->ps.fd.forcePowerLevel[FP_LEVITATION] == 3) { //this is a sad hack..
 		if (!ent->client->pers.practice) {
 			ent->client->ps.powerups[PW_YSALAMIRI] = 0; //beh, only in racemode so wont fuck with ppl using amtele as checkpoints midcourse
+			ent->client->ps.stats[STAT_RESTRICTIONS] = 0; //meh
+			if (ent->client->savedJumpLevel && ent->client->ps.fd.forcePowerLevel[FP_LEVITATION] != ent->client->savedJumpLevel) {
+				ent->client->ps.fd.forcePowerLevel[FP_LEVITATION] = ent->client->savedJumpLevel;
+				//trap->SendServerCommand(ent-g_entities, va("print \"Restored saved jumplevel (%i).\n\"", ent->client->savedJumpLevel));
+				ent->client->savedJumpLevel = 0;
+			}
 		}
 		ent->client->ps.powerups[PW_FORCE_BOON] = 0;
 		ent->client->pers.haste = qfalse;
@@ -744,6 +748,9 @@ void QINLINE ResetSpecificPlayerTimers(gentity_t* ent, qboolean print) {
 	ent->client->ps.fd.forceRageRecoveryTime = 0;
 
 	ent->client->pers.stats.lastResetTime = level.time; //well im just not sure
+
+	ent->client->midRunTeleCount = 0;
+	ent->client->midRunTeleMarkCount = 0;
 
 	if (wasReset && print)
 		//trap->SendServerCommand( ent-g_entities, "print \"Timer reset!\n\""); //console spam is bad
@@ -803,10 +810,10 @@ void Cmd_Noclip_f( gentity_t *ent ) {
 			if (!target->client || target->client->ps.m_iVehicleNum)
 				return;
 			trap->SendServerCommand(target-g_entities, va("print \"%s\n\"", target->client->noclip ? "noclip OFF" : "noclip ON"));
-			if (target->client->sess.raceMode && target->client->noclip)
+			if (target->client->sess.raceMode && target->client->noclip && !target->client->pers.practice)
 				AmTeleportPlayer( target, target->client->ps.origin, target->client->ps.viewangles, qtrue, qtrue, qfalse ); //Good
 			target->client->noclip = !target->client->noclip;
-			if (!sv_cheats.integer)
+			if (!sv_cheats.integer && !target->client->pers.practice)
 				ResetPlayerTimers(target, qtrue);
 			return;
 		}
@@ -814,10 +821,10 @@ void Cmd_Noclip_f( gentity_t *ent ) {
 			if (ent->client->ps.m_iVehicleNum)
 				return;
 			trap->SendServerCommand(ent-g_entities, va("print \"%s\n\"", ent->client->noclip ? "noclip OFF" : "noclip ON"));
-			if (ent->client->sess.raceMode && ent->client->noclip)
+			if (ent->client->sess.raceMode && ent->client->noclip && !ent->client->pers.practice)
 				AmTeleportPlayer( ent, ent->client->ps.origin, ent->client->ps.viewangles, qtrue, qtrue, qfalse ); //Good
 			ent->client->noclip = !ent->client->noclip;
-			if (!sv_cheats.integer)
+			if (!sv_cheats.integer && !ent->client->pers.practice)
 				ResetPlayerTimers(ent, qtrue);
 			return;
 		}
@@ -826,10 +833,10 @@ void Cmd_Noclip_f( gentity_t *ent ) {
 		if (ent->client->ps.m_iVehicleNum)
 			return;
 		trap->SendServerCommand(ent-g_entities, va("print \"%s\n\"", ent->client->noclip ? "noclip OFF" : "noclip ON"));
-		if (ent->client->sess.raceMode && ent->client->noclip)
+		if (ent->client->sess.raceMode && ent->client->noclip && !ent->client->pers.practice)
 			AmTeleportPlayer( ent, ent->client->ps.origin, ent->client->ps.viewangles, qtrue, qtrue, qfalse ); //Good
 		ent->client->noclip = !ent->client->noclip;
-		if (!sv_cheats.integer)
+		if (!sv_cheats.integer && !ent->client->pers.practice)
 			ResetPlayerTimers(ent, qtrue);
 	}
 	else if (allowed) { //Cheats enabled only
@@ -6947,6 +6954,36 @@ static void Cmd_Ysal_f(gentity_t *ent)
 	}
 }
 
+static void Cmd_ToggleCrouchJump_f(gentity_t *ent)
+{
+	if (!ent->client)
+		return;
+
+	if (!ent->client->pers.practice) {
+		trap->SendServerCommand(ent - g_entities, "print \"You must be in practice mode to use this command!\n\"");
+		return;
+	}
+
+	if (!ent->client->sess.raceMode) {
+		trap->SendServerCommand(ent - g_entities, "print \"You must be in race mode to use this command!\n\""); //Should never happen since cant be in practice w/o racemode? or... w/e
+		return;
+	}
+
+	if (trap->Argc() != 1) {
+		trap->SendServerCommand(ent - g_entities, "print \"Usage: /crouchjump\n\"");
+		return;
+	}
+
+	if (ent->client->ps.stats[STAT_RESTRICTIONS] & JAPRO_RESTRICT_CROUCHJUMP) {
+		ent->client->ps.stats[STAT_RESTRICTIONS] &= ~JAPRO_RESTRICT_CROUCHJUMP;
+		trap->SendServerCommand(ent - g_entities, "print \"HL Crouchclimbing disabled\n\"");
+	}
+	else {
+		ent->client->ps.stats[STAT_RESTRICTIONS] |= JAPRO_RESTRICT_CROUCHJUMP;
+		trap->SendServerCommand(ent - g_entities, "print \"HL Crouchclimbing enabled\n\"");
+	}
+}
+
 static void Cmd_Launch_f(gentity_t *ent)
 {
 	char xySpeedStr[16], xStr[16], yStr[16], zStr[16], yawStr[16], zSpeedStr[16];
@@ -7118,6 +7155,14 @@ void Cmd_Amtelemark_f(gentity_t *ent)
 			return;
 		}
 		*/
+
+		if ((ent->client->ps.stats[STAT_RESTRICTIONS] & JAPRO_RESTRICT_ALLOWTELES) && ent->client->sess.sessionTeam != TEAM_SPECTATOR) {
+			if (ent->client->ps.groundEntityNum == ENTITYNUM_NONE || ent->client->ps.velocity[2] != 0) { //so they can't accidentally teleport midair
+				trap->SendServerCommand(ent - g_entities, "print \"You must be on the ground to telemark midrun!\n\"");
+				return;
+			}
+			ent->client->midRunTeleMarkCount++;
+		}
 
 		VectorCopy(ent->client->ps.origin, ent->client->pers.telemarkOrigin);
 		if (ent->client->sess.sessionTeam == TEAM_SPECTATOR && (ent->client->ps.pm_flags & PMF_FOLLOW))
@@ -7501,8 +7546,29 @@ void Cmd_Race_f(gentity_t *ent)
 	}
 
 	if (level.gametype != GT_FFA) {
-		trap->SendServerCommand(ent-g_entities, "print \"^5This command is not allowed in this gametype!\n\"");
-		return;
+		if (level.gametype >= GT_TEAM && g_raceMode.integer == 2)
+		{//this is ok
+
+			ent->client->pers.noFollow = qfalse;
+			ent->client->pers.practice = qfalse;
+			ent->r.svFlags &= ~SVF_SINGLECLIENT; //ehh?
+			ent->s.weapon = WP_SABER; //Dont drop our weapon
+			Cmd_ForceChanged_f(ent);//Make sure their jump level is valid.. if leaving racemode :S
+
+			if (ent->client->sess.sessionTeam != TEAM_FREE) {
+				ent->client->sess.raceMode = qtrue;
+				SetTeam(ent, "race", qfalse);
+			}
+			else {
+				ent->client->sess.raceMode = qfalse;
+				SetTeam(ent, "spec", qfalse);
+			}
+			return;//duno..
+		}
+		else {
+			trap->SendServerCommand(ent-g_entities, "print \"^5This command is not allowed in this gametype!\n\"");
+			return;
+		}
 	}
 
 	if (ent->client->sess.raceMode) {//Toggle it
@@ -8733,7 +8799,7 @@ command_t commands[] = {
 
 	{ "register",			Cmd_ACRegister_f,			CMD_NOINTERMISSION },
 
-	{ "rfind",				Cmd_DFFind_f,			CMD_NOINTERMISSION },
+	{ "rfind",				Cmd_DFFind_f,				CMD_NOINTERMISSION },
 	{ "rhardest",			Cmd_DFHardest_f,			CMD_NOINTERMISSION },
 	{ "rlatest",			Cmd_DFRecent_f,				CMD_NOINTERMISSION },
 
@@ -8787,7 +8853,8 @@ command_t commands[] = {
 	{ "where",				Cmd_Where_f,				CMD_NOINTERMISSION },
 
 	{ "whois",				Cmd_ACWhois_f,				0 },
-	{ "ysal",				Cmd_Ysal_f,					CMD_NOINTERMISSION }
+	{ "ysal",				Cmd_Ysal_f,					CMD_NOINTERMISSION },
+	{ "crouchjump",			Cmd_ToggleCrouchJump_f,		CMD_NOINTERMISSION },
 };
 static const size_t numCommands = ARRAY_LEN( commands );
 
