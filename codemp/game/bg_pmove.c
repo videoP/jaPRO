@@ -320,6 +320,7 @@ qboolean BG_KnockDownable(playerState_t *ps)
 extern qboolean BG_InKnockDown(int anim);
 qboolean BG_CanJetpack(playerState_t *ps)
 {
+	//Need a debouncer
 	if (!(ps->stats[STAT_HOLDABLE_ITEMS] & (1 << HI_JETPACK)))
 		return qfalse;
 	if (ps->jetpackFuel < 10)
@@ -331,6 +332,8 @@ qboolean BG_CanJetpack(playerState_t *ps)
 	if (BG_InSpecialJump(ps->legsAnim))
 		return qfalse;	
 	if (BG_InKnockDown(ps->legsAnim))
+		return qfalse;
+	if (ps->stats[STAT_JUMPTIME] > 0)
 		return qfalse;
 	return qtrue;
 }
@@ -12604,7 +12607,12 @@ void PmoveSingle (pmove_t *pmove) {
 			gDist = PM_GroundDistance();
 
 			if (pm->ps->velocity[2] > 0 || gDist > JETPACK_HOVER_HEIGHT) {//Going up or super high off ground - this needs to be improved - base on last jump time or?
-				pm->ps->eFlags |= EF_JETPACK_ACTIVE;
+				if (!(pm->ps->eFlags & EF_JETPACK_ACTIVE)) {
+					pm->ps->stats[STAT_JUMPTIME] = 500;
+					pm->ps->eFlags |= EF_JETPACK_ACTIVE;
+				}
+				//If we were not just active, and now we are, set jumptime.
+
 			}
 			//Com_Printf("Setting jetpack\n");
 		}
