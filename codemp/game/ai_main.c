@@ -4671,6 +4671,8 @@ void G_NewBotAIAimLeading(bot_state_t* bs, vec3_t headlevel) {
 					predictedSpot[2] -= (diff - forceJumpHeight[bs->currentEnemy->client->ps.fd.forcePowerLevel[FP_LEVITATION]]);
 				}
 			}
+			else if (bs->currentEnemy->client->ps.eFlags & EF_JETPACK_ACTIVE) { //dont predict drops if they are jetting?
+			}
 			else {
 				vec3_t predictedSpotGrav;
 				trace_t tr;
