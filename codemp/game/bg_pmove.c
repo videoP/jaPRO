@@ -333,8 +333,8 @@ qboolean BG_CanJetpack(playerState_t *ps)
 		return qfalse;	
 	if (BG_InKnockDown(ps->legsAnim))
 		return qfalse;
-	if (ps->stats[STAT_JUMPTIME] > 0)
-		return qfalse;
+	//if (ps->stats[STAT_JUMPTIME] > 0) //revert until bot jetpack behaviour is fixed
+		//return qfalse;
 	return qtrue;
 }
 
