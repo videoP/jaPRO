@@ -4650,6 +4650,12 @@ void G_NewBotAIAimLeading(bot_state_t* bs, vec3_t headlevel) {
 
 	projectileSpeed = G_NewBotAIGetProjectileSpeed(bs->cur_ps.weapon, bs->doAltAttack);
 
+	if (g_projectileInheritance.value) { //todo still have to teach brodie full inheritence projectiles
+		vec3_t botforward;
+		AngleVectors(bs->viewangles, botforward, NULL, NULL);
+		projectileSpeed += DotProduct(botforward, g_entities[bs->client].client->ps.velocity)*g_projectileInheritance.value;
+	}
+
 	if (projectileSpeed) { //this should be done after playr movement
 		eta = (bs->frame_Enemy_Len / projectileSpeed); //TODO: Adjust if its a curved projectile arc
 		VectorMA(headlevel, eta, bs->currentEnemy->client->ps.velocity, predictedSpot); //Multiple vel by eta, and add it to their origin to get predicted spot
