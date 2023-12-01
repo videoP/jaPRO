@@ -701,7 +701,7 @@ void QINLINE ResetSpecificPlayerTimers(gentity_t* ent, qboolean print) {
 			ent->client->ps.stats[STAT_ARMOR] = 25;
 		}
 		//}
-		if (ent->client->sess.movementStyle == MV_RJQ3 || ent->client->sess.movementStyle == MV_RJCPM || ent->client->sess.movementStyle == MV_COOP_JKA) { //Get rid of their rockets when they tele/noclip..? Do this for every style..
+		if (ent->client->sess.movementStyle == MV_RJQ3 || ent->client->sess.movementStyle == MV_RJCPM || ent->client->sess.movementStyle == MV_COOP_JKA || ent->client->sess.movementStyle == MV_TRIBES) { //Get rid of their rockets when they tele/noclip..? Do this for every style..
 			DeletePlayerProjectiles(ent);
 		}
 
@@ -6675,7 +6675,7 @@ static void Cmd_MovementStyle_f(gentity_t *ent)
 			ResetPlayerTimers(ent, qtrue);
 		}
 		else {
-			if (ent->client->sess.movementStyle == MV_RJQ3 || ent->client->sess.movementStyle == MV_RJCPM || ent->client->sess.movementStyle == MV_COOP_JKA) { //Get rid of their rockets when they tele/noclip..?
+			if (ent->client->sess.movementStyle == MV_RJQ3 || ent->client->sess.movementStyle == MV_RJCPM || ent->client->sess.movementStyle == MV_COOP_JKA || ent->client->sess.movementStyle == MV_TRIBES) { //Get rid of their rockets when they tele/noclip..?
 				DeletePlayerProjectiles(ent);
 			}
 			if (newStyle == MV_WSW)

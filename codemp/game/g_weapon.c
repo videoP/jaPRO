@@ -5760,7 +5760,7 @@ void FireWeapon( gentity_t *ent, qboolean altFire ) {
 	if (ent->client) {
 		if (ent->client->pers.amfreeze)
 			return;
-		if (ent->client->sess.raceMode && !((ent->client->sess.movementStyle == MV_RJQ3) || (ent->client->sess.movementStyle == MV_RJCPM) || (ent->client->sess.movementStyle == MV_JETPACK) || (ent->client->sess.movementStyle == MV_COOP_JKA)))
+		if (ent->client->sess.raceMode && !((ent->client->sess.movementStyle == MV_RJQ3) || (ent->client->sess.movementStyle == MV_RJCPM) || (ent->client->sess.movementStyle == MV_TRIBES) || (ent->client->sess.movementStyle == MV_JETPACK) || (ent->client->sess.movementStyle == MV_COOP_JKA)))
 			return;
 	}
 

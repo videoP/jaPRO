@@ -4494,7 +4494,7 @@ void G_LocationBasedDamageModifier(gentity_t *ent, vec3_t point, int mod, int df
 		return;
 	}
 
-	if (ent && ent->client && ((ent->client->sess.movementStyle == MV_RJQ3) || (ent->client->sess.movementStyle == MV_RJCPM) || (ent->client->sess.movementStyle == MV_COOP_JKA)))//no loc based in rocketjump mode -and detpack?
+	if (ent && ent->client && ((ent->client->sess.movementStyle == MV_RJQ3) || (ent->client->sess.movementStyle == MV_RJCPM) || (ent->client->sess.movementStyle == MV_TRIBES) || (ent->client->sess.movementStyle == MV_COOP_JKA)))//no loc based in rocketjump mode -and detpack?
 		return;
 
 	if ( (dflags&DAMAGE_NO_HIT_LOC) )
@@ -4734,9 +4734,9 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker, vec3_
 			//if (mod != MOD_BLASTER || (!targ->client || !targ->client->ps.stats[STAT_MOVEMENTSTYLE] != MV_COOP_JKA))
 				return;
 		}
-		else if ((attacker->client->ps.stats[STAT_MOVEMENTSTYLE] != MV_RJQ3) && (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] != MV_RJCPM) && (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] != MV_JETPACK)) //ignore self damage
+		else if ((attacker->client->ps.stats[STAT_MOVEMENTSTYLE] != MV_RJQ3) && (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] != MV_RJCPM) && (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] != MV_JETPACK) && (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] != MV_TRIBES)) //ignore self damage
 			return; //ignore self damage if attacker is in racemode
-		if (((attacker->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_RJQ3) || (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_RJCPM) || (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_JETPACK)) && targ->client && (targ != attacker)) {
+		if (((attacker->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_RJQ3) || (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_RJCPM) || (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_JETPACK) || (attacker->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_TRIBES)) && targ->client && (targ != attacker)) {
 			return; //ignore other damage if attacker is in racemode - why is this not returning for detpacking race->outof race
 		}
 	}
@@ -5361,7 +5361,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker, vec3_
 	// always give half damage if hurting self... but not in siege.  Heavy weapons need a counter.
 	// calculated after knockback, so rocket jumping works
 	if ( targ == attacker && !(dflags & DAMAGE_NO_SELF_PROTECTION)) {
-		if (targ && targ->client && ((targ->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_RJQ3) || (targ->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_RJCPM) || (targ->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_JETPACK)))//fuck this?
+		if (targ && targ->client && ((targ->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_RJQ3) || (targ->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_RJCPM) || (targ->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_TRIBES) || (targ->client->ps.stats[STAT_MOVEMENTSTYLE] == MV_JETPACK)))//fuck this?
 			damage = 1;
 		if ( level.gametype == GT_SIEGE )
 			damage *= 1.5;

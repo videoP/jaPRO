@@ -249,7 +249,7 @@ void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles, int speed)
 	if (player->client->sess.raceMode) {
 		//player->client->ps.powerups[PW_YSALAMIRI] = 0; //Fuck
 		player->client->ps.powerups[PW_FORCE_BOON] = 0;
-		if (player->client->sess.movementStyle == MV_RJQ3 || player->client->sess.movementStyle == MV_RJCPM) //Get rid of their rockets when they tele/noclip..?
+		if (player->client->sess.movementStyle == MV_RJQ3 || player->client->sess.movementStyle == MV_RJCPM || player->client->sess.movementStyle == MV_TRIBES) //Get rid of their rockets when they tele/noclip..?
 			DeletePlayerProjectiles(player);
 		if (player->client->sess.movementStyle == MV_COOP_JKA && player->client->ps.duelInProgress) { //clean this up..
 			gentity_t* gripEnt;

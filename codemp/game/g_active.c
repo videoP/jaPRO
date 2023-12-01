@@ -3844,6 +3844,13 @@ void ClientThink_real( gentity_t *ent ) {
 			if (ent->health > 0)
 				ent->client->ps.stats[STAT_ARMOR] = ent->client->ps.stats[STAT_HEALTH] = ent->health = 100;
 		}
+		else if (movementStyle == MV_TRIBES) {
+			ent->client->ps.stats[STAT_WEAPONS] = (1 << WP_MELEE) + (1 << WP_ROCKET_LAUNCHER);
+			if (!ent->client->pers.stats.startTime)
+				ent->client->ps.ammo[AMMO_ROCKETS] = 2; //Dont drop their ammo before the course starts? qol
+			if (ent->health > 0)
+				ent->client->ps.stats[STAT_ARMOR] = ent->client->ps.stats[STAT_HEALTH] = ent->health = 100;
+		}
 		else if (movementStyle == MV_COOP_JKA) {
 			//ent->client->ps.fd.forcePowerLevel[FP_LEVITATION] = 1;
 			ent->client->ps.fd.forcePowerLevel[FP_LIGHTNING] = ent->client->ps.fd.forcePowerLevel[FP_DRAIN] = 2;
@@ -3864,7 +3871,7 @@ void ClientThink_real( gentity_t *ent ) {
 			}
 		}
 
-		if (movementStyle == MV_JETPACK) //always give jetpack style a jetpack, and non jetpack styles no jetpack, maybe this should just be in clientspawn ?
+		if (movementStyle == MV_JETPACK || movementStyle == MV_TRIBES) //always give jetpack style a jetpack, and non jetpack styles no jetpack, maybe this should just be in clientspawn ?
 			ent->client->ps.stats[STAT_HOLDABLE_ITEMS] |= (1 << HI_JETPACK);
 		else
 			ent->client->ps.stats[STAT_HOLDABLE_ITEMS] &= ~(1 << HI_JETPACK); 
