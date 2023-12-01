@@ -6953,6 +6953,16 @@ static void PM_Footsteps( void ) {
 #endif
 			}
 		}
+		else if ((pm->cmd.buttons & BUTTON_WALKING) && pm->ps->stats[STAT_MOVEMENTSTYLE] == MV_TRIBES){//tribes skii
+			if (pm->cmd.rightmove > 0)
+				desiredAnim = BOTH_HOP_R;
+			else if (pm->cmd.rightmove < 0)
+				desiredAnim = BOTH_HOP_L;
+			else if (pm->cmd.forwardmove > 0)
+				desiredAnim = BOTH_HOP_F;
+			else if (pm->cmd.forwardmove < 0)
+				desiredAnim = BOTH_HOP_B;
+		}
 		else
 		{
 			bobmove = 0.2f;	// walking bobs slow
