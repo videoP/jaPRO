@@ -3405,7 +3405,7 @@ qboolean CanFireGrapple( gentity_t *ent ) { // Adapt for new hold-to-use jetpack
 		return qfalse;
 	if (!g_allowGrapple.integer && !ent->client->sess.raceMode)
 		return qfalse;
-	if (ent->client->sess.raceMode && ent->client->sess.movementStyle != MV_JETPACK)
+	if (ent->client->sess.raceMode && ent->client->sess.movementStyle != MV_JETPACK && ent->client->sess.movementStyle != MV_TRIBES)
 		return qfalse;
 	if (ent->client->ps.duelInProgress)
 		return qfalse;
@@ -5008,11 +5008,15 @@ void ClientThink_real( gentity_t *ent ) {
 	//Com_Printf("Chunk 2 start!\n");
 	if (pm && ent->client)
 	{
+		int hookFloodProtect = g_hookFloodProtect.integer;
+		if (ent->client->sess.movementStyle == MV_TRIBES) {
+			//hookFloodProtect = 4000;
+		}
 
 		if ( (pmove.cmd.buttons & BUTTON_GRAPPLE) &&
 				ent->client->ps.pm_type != PM_DEAD &&
 				!ent->client->hookHasBeenFired &&
-				(ent->client->hookFireTime < level.time - g_hookFloodProtect.integer) &&
+				(ent->client->hookFireTime < level.time - hookFloodProtect) &&
 				CanFireGrapple(ent))
 		{
 			Weapon_GrapplingHook_Fire( ent );

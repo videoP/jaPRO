@@ -430,8 +430,8 @@ void WP_FireBlasterMissile( gentity_t *ent, vec3_t start, vec3_t dir, qboolean a
 		damage = 20;
 	}
 	else if (g_tweakWeapons.integer & WT_TRIBES) {
-		velocity = 10440;//10440 but thats too fast?
-		damage = 9;
+		velocity = 10440 * g_projectileVelocityScale.value;//10440 but thats too fast?
+		damage = 9 * g_weaponDamageScale.value;
 	}
 	missile = CreateMissileNew( start, dir, velocity, 10000, ent, altFire, qtrue, qtrue );
 
@@ -2661,8 +2661,8 @@ static void WP_FireRocket( gentity_t *ent, qboolean altFire )
 			vel = 900;
 		}
 		else if (g_tweakWeapons.integer & WT_TRIBES) {
-			damage = splashDamage = 90;
-			vel = 2040;
+			damage = splashDamage = 90 * g_splashDamageScale.value;
+			vel = 2040 * g_projectileVelocityScale.value;
 		}
 	}
 
@@ -4309,7 +4309,7 @@ static void WP_FireConcussion( gentity_t *ent )
 	gentity_t *missile;
 
 	if (g_tweakWeapons.integer & WT_TRIBES) {
-		vel = 2275;
+		vel = 2275 * g_projectileVelocityScale.value;
 	}
 
 	//hold us still for a bit

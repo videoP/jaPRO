@@ -4195,6 +4195,69 @@ static void PM_GrappleMoveTarzan( void ) {
 	PM_GetGrappleAnim();
 	
 }
+
+static void PM_GrappleMoveTribes(void) {
+	vec3_t vel;
+	float vlen;
+	int pullSpeed = 800;
+	int pullStrength1 = 20;
+	int pullStrength2 = 40;
+
+	float dot;
+	vec3_t enemyVel;
+	bgEntity_t *bgEnt = PM_BGEntForNum(pm_entSelf->s.lookTarget);
+
+
+#if _GAME
+	if (!pm->ps->stats[STAT_RACEMODE]) {
+		pullSpeed = g_hookStrength.integer;
+		pullStrength1 = g_hookStrength1.integer;
+		pullStrength2 = g_hookStrength2.integer;
+	}
+#else
+	if (!pm->ps->stats[STAT_RACEMODE]) {
+		pullSpeed = cgs.hookpull;
+	}
+#endif
+
+	VectorSubtract(pm->ps->lastHitLoc, pm->ps->origin, vel); //Lasthitloc gets bugged?
+	vlen = VectorLength(vel);
+	VectorNormalize(vel);
+
+
+
+
+
+
+
+	VectorCopy(bgEnt->s.pos.trDelta, enemyVel);
+	VectorNormalize(enemyVel);
+
+	dot = DotProduct(vel, enemyVel);
+	if (dot > 0)
+		pullSpeed = VectorLength(bgEnt->s.pos.trDelta) * dot;
+	else
+		pullSpeed = 0;
+
+	if (pullSpeed < 100)
+		pullSpeed = 100;
+
+
+	if (vlen < (pullSpeed / 2))
+		PM_Accelerate(vel, 2 * vlen, vlen * (pullStrength2 / (float)pullSpeed));
+	else
+		PM_Accelerate(vel, pullSpeed, pullStrength1);
+
+	if (vel[2] > 0.5f && pml.walking) {
+		pml.walking = qfalse;
+		//PM_ForceLegsAnim( BOTH_JUMP1  ); //LEGS_JUMP
+	}
+
+	pml.groundPlane = qfalse;
+
+	PM_GetGrappleAnim();
+
+}
 #endif
 
 /*
@@ -13070,10 +13133,13 @@ void PmoveSingle (pmove_t *pmove) {
 
 #if _GRAPPLE
 #if _GAME
-			if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && ((g_allowGrapple.integer == 1) || pm->ps->stats[STAT_RACEMODE])) {
-				PM_GrappleMoveTarzan();
+			if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && pm->ps->stats[STAT_MOVEMENTSTYLE] == MV_TRIBES) {
+				PM_GrappleMoveTribes();
 			} 			
-			if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && (g_allowGrapple.integer > 1)) {
+			else if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && ((g_allowGrapple.integer == 1) || pm->ps->stats[STAT_RACEMODE])) {
+				PM_GrappleMoveTarzan();
+			}
+			else if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && (g_allowGrapple.integer > 1)) {
 				PM_GrappleMove();
 			}
 #else
