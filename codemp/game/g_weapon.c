@@ -741,8 +741,12 @@ void WP_DisruptorProjectileFire(gentity_t* ent, qboolean altFire)
 	gentity_t* missile;
 	int	damage = 30 * g_weaponDamageScale.value;
 	float count;
+	float vel = 9000;
 
-	missile = CreateMissileNew(muzzle, forward, 9000 * g_projectileVelocityScale.value, 10000, ent, altFire, qtrue, qtrue);
+	if (g_tweakWeapons.integer & WT_TRIBES)
+		vel = 36000;
+
+	missile = CreateMissileNew(muzzle, forward, vel * g_projectileVelocityScale.value, 10000, ent, altFire, qtrue, qtrue);
 
 	if (altFire) {
 		float boxSize = 0;
@@ -2243,8 +2247,14 @@ static void WP_CreateFlechetteBouncyThing( vec3_t start, vec3_t fwd, gentity_t *
 //------------------------------------------------------------------------------
 {
 	gentity_t	*missile;
+	float vel = 1000;
+
+	if (g_tweakWeapons.integer & WT_TRIBES) {
+		vel = 2000;
+	}
+
 	if (g_tweakWeapons.integer & WT_FLECHETTE_ALT_SPRD)
-		missile = CreateMissileNew( start, fwd, ((1000 + 100*(i)) * g_projectileVelocityScale.value), 1500 + random() * 2000, self, qtrue, qtrue, qtrue ); //mean of 1050
+		missile = CreateMissileNew( start, fwd, ((vel + 100*(i)) * g_projectileVelocityScale.value), 1500 + random() * 2000, self, qtrue, qtrue, qtrue ); //mean of 1050
 	else 
 		missile = CreateMissileNew( start, fwd, (700 * g_projectileVelocityScale.value) + random() * 700, 1500 + random() * 2000, self, qtrue, qtrue, qtrue );
 	
@@ -2661,7 +2671,8 @@ static void WP_FireRocket( gentity_t *ent, qboolean altFire )
 			vel = 900;
 		}
 		else if (g_tweakWeapons.integer & WT_TRIBES) {
-			damage = splashDamage = 90 * g_splashDamageScale.value;
+			damage = 90 * g_weaponDamageScale.value;
+			splashDamage = 90 * g_splashDamageScale.value;
 			vel = 2040 * g_projectileVelocityScale.value;
 		}
 	}
@@ -2936,6 +2947,11 @@ gentity_t *WP_FireThermalDetonator( gentity_t *ent, qboolean altFire )
 	gentity_t	*bolt;
 	vec3_t		dir, start;
 	float chargeAmount = 1.0f; // default of full charge
+	float vel = TD_VELOCITY;
+
+	if (g_tweakWeapons.integer & WT_TRIBES) {
+		vel = TD_VELOCITY * g_projectileVelocityScale.value;
+	}
 
 	VectorCopy( forward, dir );
 	VectorCopy( muzzle, start );
@@ -2964,7 +2980,7 @@ gentity_t *WP_FireThermalDetonator( gentity_t *ent, qboolean altFire )
 		if ( ent->client ) {
 			chargeAmount = level.time - ent->client->ps.weaponChargeTime;
 		}
-		chargeAmount = chargeAmount / (float)TD_VELOCITY;
+		chargeAmount = chargeAmount / vel;
 		if ( chargeAmount > 1.0f )
 			chargeAmount = 1.0f;
 		else if ( chargeAmount < TD_MIN_CHARGE )
@@ -2980,7 +2996,7 @@ gentity_t *WP_FireThermalDetonator( gentity_t *ent, qboolean altFire )
 	bolt->s.pos.trType = TR_GRAVITY;
 	bolt->parent = ent;
 	bolt->r.ownerNum = ent->s.number;
-	VectorScale( dir, TD_VELOCITY * chargeAmount, bolt->s.pos.trDelta );
+	VectorScale( dir, vel * chargeAmount, bolt->s.pos.trDelta );
 
 	if ( ent->health >= 0 )
 	{
