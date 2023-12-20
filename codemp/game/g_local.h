@@ -589,6 +589,7 @@ struct gentity_s {
 
 	int			noise_index;
 	int			awesomenoise_index;//japro
+	int			courseID;
 
 	// timing variables
 	float		wait;
@@ -752,6 +753,8 @@ typedef struct {//JAPRO - Serverside - Stats
 
 	int kothTime;
 	short lowestHP;
+	int checkpoints;
+	int courseID;
 } stats_t;
 
 // client data that stays across multiple respawns, but is cleared
