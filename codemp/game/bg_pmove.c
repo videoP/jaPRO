@@ -12745,15 +12745,14 @@ void PmoveSingle (pmove_t *pmove) {
 		{
 			pm->ps->gravity *= 0.25f;
 		}
-	}
-	/*
+	}	
 	else if (BG_IsNewJetpacking(pm->ps)) //New Jetpack
 	{
 		savedGravity = pm->ps->gravity;
-		pm->ps->gravity *= 0.01f; //0.05 in FM3
+		//pm->ps->gravity *= 0.01f; //0.05 in FM3
 		//dont fuck with gravity in jetpack just use stronger thrust?
 	}
-	*/
+	
 	else if (gPMDoSlowFall)
 	{
 		savedGravity = pm->ps->gravity;
