@@ -13237,7 +13237,7 @@ void PmoveSingle (pmove_t *pmove) {
 			if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && pm->ps->stats[STAT_MOVEMENTSTYLE] == MV_TRIBES) {
 				PM_GrappleMoveTribes();
 			}
-#if _GAME		
+#if _GAME
 			else if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && ((g_allowGrapple.integer == 1) || pm->ps->stats[STAT_RACEMODE])) {
 				PM_GrappleMoveTarzan();
 			}
@@ -13245,13 +13245,10 @@ void PmoveSingle (pmove_t *pmove) {
 				PM_GrappleMove();
 			}
 #else
-
-			if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && (!(cgs.jcinfo & JAPRO_CINFO_JAPLUSGRAPPLE) || pm->ps->stats[STAT_RACEMODE])) {
+			else if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && cgs.serverMod != SVMOD_JAPLUS && (!(cgs.jcinfo & JAPRO_CINFO_JAPLUSGRAPPLE) || pm->ps->stats[STAT_RACEMODE]))
 				PM_GrappleMoveTarzan();
-			} 
-			if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && (cgs.jcinfo & JAPRO_CINFO_JAPLUSGRAPPLE)) {
+			else if ((pm->ps->pm_flags & PMF_GRAPPLE) && !(pm->ps->pm_flags & PMF_DUCKED) && (cgs.serverMod == SVMOD_JAPLUS || (cgs.jcinfo & JAPRO_CINFO_JAPLUSGRAPPLE)))
 				PM_GrappleMove();
-			} 
 #endif
 
 #endif
