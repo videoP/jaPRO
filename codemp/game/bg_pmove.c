@@ -1295,8 +1295,6 @@ void PM_AirAccelerateTribes(vec3_t wishdir, float wishspeed, float accel)
 	if (pm->ps->pm_flags & PMF_TIME_WATERJUMP)
 		return;
 
-	Com_Printf("wishspd %.2f\n", wishspd);
-
 	//if (wishspd > 300)
 		//wishspd = 300;
 
