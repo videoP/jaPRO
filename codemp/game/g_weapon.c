@@ -2273,7 +2273,8 @@ static void WP_CreateFlechetteBouncyThing( vec3_t start, vec3_t fwd, gentity_t *
 
 	if (g_tweakWeapons.integer & WT_TRIBES) {
 		vel = 2000;
-		missile = CreateMissileNew(start, fwd, (vel * g_projectileVelocityScale.value), 3000 + random() * 2000, self, qtrue, qtrue, qtrue);
+		missile = CreateMissileNew(start, fwd, (vel * g_projectileVelocityScale.value), 4000, self, qtrue, qtrue, qtrue);
+		missile->setTime = level.time;
 	}
 	else if (g_tweakWeapons.integer & WT_FLECHETTE_ALT_SPRD)
 		missile = CreateMissileNew(start, fwd, ((vel + 100 * (i)) * g_projectileVelocityScale.value), 1500 + random() * 2000, self, qtrue, qtrue, qtrue); //mean of 1050
@@ -2813,7 +2814,7 @@ static void WP_CreateMortar( vec3_t start, vec3_t fwd, gentity_t *self)
 //------------------------------------------------------------------------------
 {
 	gentity_t	*missile;
-	float velocity = 1400 * g_projectileVelocityScale.value;
+	float velocity = 1600 * g_projectileVelocityScale.value;
 	int lifetime = 3500, damage = 140 * g_weaponDamageScale.value, splashdamage = 140 * g_splashDamageScale.value, splashradius = 384;
 
 	missile = CreateMissileNew( start, fwd, velocity, lifetime, self, qtrue, qtrue, qtrue );
