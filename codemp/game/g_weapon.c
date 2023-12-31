@@ -431,7 +431,7 @@ void WP_FireBlasterMissile( gentity_t *ent, vec3_t start, vec3_t dir, qboolean a
 	{ //animent
 		if (g_tweakWeapons.integer & WT_TRIBES) {
 			velocity = 10440 * g_projectileVelocityScale.value;//10440 but thats too fast?
-			damage = 5 * g_weaponDamageScale.value;
+			damage = 6 * g_weaponDamageScale.value;
 		}
 		else damage = 10;
 	}
@@ -441,7 +441,7 @@ void WP_FireBlasterMissile( gentity_t *ent, vec3_t start, vec3_t dir, qboolean a
 	}
 	else if (g_tweakWeapons.integer & WT_TRIBES) {
 		velocity = 10440 * g_projectileVelocityScale.value;//10440 but thats too fast?
-		damage = 9 * g_weaponDamageScale.value;
+		damage = 6 * g_weaponDamageScale.value;
 	}
 	missile = CreateMissileNew( start, dir, velocity, 10000, ent, altFire, qtrue, qtrue );
 
