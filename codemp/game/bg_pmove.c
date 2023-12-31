@@ -3925,14 +3925,18 @@ static void PM_DodgeMove(int forward, int right)
 	int DODGE_SPEED = pm->ps->speed * 1.25f;
 	int DODGE_JUMP_SPEED = 180;
 
-	if (pm->ps->stats[STAT_MOVEMENTSTYLE] == MV_TRIBES) {
-		DODGE_SPEED = pm->ps->speed * 1.5f;
-		DODGE_JUMP_SPEED = 0;
-	}
-
 	VectorMA( vec3_origin, right, pml.right, dodgedir );
 	VectorMA( dodgedir, forward, pml.forward, dodgedir );
 	VectorNormalize( dodgedir );
+
+	if (pm->ps->stats[STAT_MOVEMENTSTYLE] == MV_TRIBES) {
+		DODGE_SPEED = pm->ps->speed * 1.5f;
+		DODGE_JUMP_SPEED = 0;
+#ifdef _GAME
+		G_PlayEffect(EFFECT_LANDING_SAND, pm->ps->origin, dodgedir);//Should be spot on wall, and wallnormal, a better, predicted way to do this?
+#endif
+	}
+
 	VectorScale( dodgedir, DODGE_SPEED, dodgedir );
 
 	VectorCopy( dodgedir, pm->ps->velocity );
@@ -3981,8 +3985,9 @@ static void PM_CheckDash(void)
 	if (pm->ps->weaponTime > 0)
 		return;
 
-	if (moveStyle == MV_WSW || moveStyle == MV_TRIBES) {
-
+	if (moveStyle == MV_WSW) {
+	}
+	else if (moveStyle == MV_TRIBES && (pm->ps->velocity[0]* pm->ps->velocity[1]) > pm->ps->speed * 1.5f) {
 	}
 	else return;
 
