@@ -659,7 +659,7 @@ qboolean	PM_SlideMove( qboolean gravity ) {
 	vec3_t		endVelocity;
 	vec3_t		endClipVelocity;
 	//qboolean	damageSelf = qtrue;
-	
+
 	numbumps = 4;
 
 	VectorCopy (pm->ps->velocity, primal_velocity);
@@ -799,8 +799,16 @@ qboolean	PM_SlideMove( qboolean gravity ) {
 
 
 			// slide along the plane
-			PM_ClipVelocity (pm->ps->velocity, planes[i], clipVelocity, OVERCLIP );
-
+			if (pm->ps->stats[STAT_RACEMODE] && pm->ps->stats[STAT_MOVEMENTSTYLE] == MV_OCPM) {
+				float offset = OVERCLIP;
+				if (bot_strafeOffset.value) {
+					offset = bot_strafeOffset.value;
+					Com_Printf("Overwriting overclip!\n");
+				}
+				PM_ClipVelocity(pm->ps->velocity, planes[i], clipVelocity, bot_strafeOffset.value); //Loda this is causing deadstops on vertical seams.  1.5f?
+			}
+			else 
+				PM_ClipVelocity(pm->ps->velocity, planes[i], clipVelocity, OVERCLIP);
 			// slide along the plane
 			PM_ClipVelocity (endVelocity, planes[i], endClipVelocity, OVERCLIP );
 
