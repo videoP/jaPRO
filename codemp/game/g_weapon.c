@@ -542,25 +542,30 @@ static void WP_FireBlaster( gentity_t *ent, qboolean altFire, int seed )
 	if ( altFire )
 	{
 		// add some slop to the alt-fire direction
-		if ((g_tweakWeapons.integer & WT_TRIBES) || (ent->client && ent->client->sess.movementStyle == MV_COOP_JKA)) {
-			angs[PITCH]	+= crandom() * 0.15;
-			angs[YAW]       += crandom() * 0.15;
-		}
-		else if (g_tweakWeapons.integer & WT_PSEUDORANDOM_FIRE)
+		if (g_tweakWeapons.integer & WT_PSEUDORANDOM_FIRE)
 		{
-			//angs[PITCH] += Q_crandom(&seed) * BLASTER_SPREAD;
-			//angs[YAW]       += Q_crandom(&seed) * BLASTER_SPREAD;
-
 			float theta = M_PI * Q_crandom(&seed); //Lets use circular spread instead of the shitty box spread?
 			float r = Q_random(&seed) * BLASTER_SPREAD;
 
-			angs[PITCH] += r * sin(theta); //r should be squared? r*r
-			angs[YAW] += r * cos(theta);
+			if (g_tweakWeapons.integer & WT_TRIBES) {
+				angs[PITCH] += r*0.15f * sin(theta); //r should be squared? r*r
+				angs[YAW] += r*0.15f * cos(theta);
+			}
+			else {
+				angs[PITCH] += r * sin(theta);
+				angs[YAW] += r * cos(theta);
+			}
 		}
 		else
 		{
-			angs[PITCH] += crandom() * BLASTER_SPREAD;
-			angs[YAW]       += crandom() * BLASTER_SPREAD;
+			if (g_tweakWeapons.integer & WT_TRIBES) {
+				angs[PITCH] += crandom() * BLASTER_SPREAD * 0.15f;
+				angs[YAW] += crandom() * BLASTER_SPREAD * 0.15f;
+			}
+			else {
+				angs[PITCH] += crandom() * BLASTER_SPREAD;
+				angs[YAW] += crandom() * BLASTER_SPREAD;
+			}
 		}
 	}
 
@@ -2895,23 +2900,28 @@ static void WP_FireRepeater(gentity_t *ent, qboolean altFire, int seed)
 	else
 	{
 		// add some slop to the alt-fire direction
-		if (g_tweakWeapons.integer & WT_TRIBES) {
-			angs[PITCH] += crandom() * BLASTER_SPREAD * 0.15;
-			angs[YAW] += crandom() * BLASTER_SPREAD * 0.15;
-		}
-		else if (g_tweakWeapons.integer & WT_PSEUDORANDOM_FIRE) {
-			//angs[PITCH] += Q_crandom(&seed) * REPEATER_SPREAD;
-			//angs[YAW]	+= Q_crandom(&seed) * REPEATER_SPREAD;
-
+		if (g_tweakWeapons.integer & WT_PSEUDORANDOM_FIRE) {
 			float theta = M_PI * Q_crandom(&seed); //Lets use circular spread instead of the shitty box spread?
 			float r = Q_random(&seed) * REPEATER_SPREAD;
 
-			angs[PITCH] += r * sin(theta);
-			angs[YAW] += r * cos(theta);
+			if (g_tweakWeapons.integer & WT_TRIBES) {
+				angs[PITCH] += r*0.15f * sin(theta);
+				angs[YAW] += r *0.15f * cos(theta);
+			}
+			else {
+				angs[PITCH] += r * sin(theta);
+				angs[YAW] += r * cos(theta);
+			}
 		}
 		else {
-			angs[PITCH] += crandom() * REPEATER_SPREAD;
-			angs[YAW] += crandom() * REPEATER_SPREAD;
+			if (g_tweakWeapons.integer & WT_TRIBES) {
+				angs[PITCH] += crandom() * REPEATER_SPREAD * 0.15f;
+				angs[YAW] += crandom() * REPEATER_SPREAD * 0.15f;
+			}
+			else {
+				angs[PITCH] += crandom() * REPEATER_SPREAD;
+				angs[YAW] += crandom() * REPEATER_SPREAD;
+			}
 		}
 
 		AngleVectors(angs, dir, NULL, NULL);
@@ -4113,7 +4123,7 @@ static void WP_FireConcussionAlt( gentity_t *ent )
 
 //[JAPRO - Serverside - Weapons - Tweak weapons Buff Conc alt - Start]
 	if (g_tweakWeapons.integer & WT_TRIBES)
-		damage *= 1.75f;
+		damage *= 1.4f;
 	else if (g_tweakWeapons.integer & WT_CONC_ALT_DAM)
 		damage *= 2.0f;
 

@@ -838,6 +838,7 @@ typedef struct clientPersistant_s {
 	char		oldDemoName[16];
 	char		demoName[MAX_QPATH];
 	unsigned int	unlocks;
+	short		tribesClass;
 
 	stats_t		stats;
 } clientPersistant_t;
