@@ -2575,7 +2575,7 @@ void rocketThink( gentity_t *ent )
 			dir[2] += crandom() * 10;
 		}
 
-		if ((g_tweakWeapons.integer & WT_TRIBES) && dist < 64*64) {
+		if ((g_tweakWeapons.integer & WT_TRIBES) && ((dist < 64*64) || (g_entities[ent->r.ownerNum].client->ps.weapon != WP_ROCKET_LAUNCHER))) {
 			//If its close blow it up.
 			ent->think = G_ExplodeMissile;
 		}
