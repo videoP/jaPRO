@@ -2237,7 +2237,7 @@ static void WP_CreateFlechetteBouncyThing( vec3_t start, vec3_t fwd, gentity_t *
 	float vel = 1000;
 
 	if (g_tweakWeapons.integer & WT_TRIBES) {
-		vel = 2000;
+		vel = 2400;
 		missile = CreateMissileNew(start, fwd, (vel * g_projectileVelocityScale.value), 4000, self, qtrue, qtrue, qtrue);
 		missile->setTime = level.time;
 	}
@@ -2690,7 +2690,7 @@ static void WP_FireRocket( gentity_t *ent, qboolean altFire )
 		else if (g_tweakWeapons.integer & WT_TRIBES) {
 			damage = 75 * g_weaponDamageScale.value;
 			splashDamage = 75 * g_splashDamageScale.value;
-			vel = 2040 * g_projectileVelocityScale.value;
+			vel = 3040 * g_projectileVelocityScale.value;
 		}
 	}
 
@@ -2808,7 +2808,7 @@ static void WP_CreateMortar( vec3_t start, vec3_t fwd, gentity_t *self)
 //------------------------------------------------------------------------------
 {
 	gentity_t	*missile;
-	float velocity = 2000 * g_projectileVelocityScale.value;
+	float velocity = 2366 * g_projectileVelocityScale.value;
 	int lifetime = 3500, damage = 140 * g_weaponDamageScale.value, splashdamage = 140 * g_splashDamageScale.value, splashradius = 384;
 
 	missile = CreateMissileNew( start, fwd, velocity, lifetime, self, qtrue, qtrue, qtrue );
@@ -4431,7 +4431,7 @@ static void WP_FireConcussion( gentity_t *ent )
 	gentity_t *missile;
 
 	if ((g_tweakWeapons.integer & WT_TRIBES) || (ent->client->sess.raceMode && ent->client->sess.movementStyle == MV_TRIBES)) {
-		vel = 2275 * g_projectileVelocityScale.value;
+		vel = 3040 * g_projectileVelocityScale.value;
 		damage = 75;
 	}
 
