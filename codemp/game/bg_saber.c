@@ -2382,10 +2382,9 @@ saberMoveName_t PM_SaberAttackForMovement(saberMoveName_t curmove)
 			overrideJumpLeftAttackMove = (saberMoveName_t)saber1->jumpAtkLeftMove;
 		}
 
-		if (saber1	&& (saber1->saberFlags&SFL_NO_CARTWHEELS))
+		if (pm->ps->stats[STAT_MOVEMENTSTYLE] == MV_TRIBES) {
 			allowCartwheels = qfalse;
-		else if (saber2 && (saber2->saberFlags&SFL_NO_CARTWHEELS))//no reason not to use else if, no point in setting it twice
-			allowCartwheels = qfalse;
+		}
 		else if (moveStyle == MV_CPM || moveStyle == MV_OCPM || moveStyle == MV_Q3 || moveStyle == MV_RJQ3 || moveStyle == MV_RJCPM || moveStyle == MV_SLICK || moveStyle == MV_BOTCPM) {
 			allowCartwheels = qfalse;
 			noSpecials = qtrue;
@@ -2394,6 +2393,10 @@ saberMoveName_t PM_SaberAttackForMovement(saberMoveName_t curmove)
 			allowCartwheels = qfalse;
 			noSpecials = qtrue;
 		}
+		else if (saber1	&& (saber1->saberFlags&SFL_NO_CARTWHEELS))
+			allowCartwheels = qfalse;
+		else if (saber2 && (saber2->saberFlags&SFL_NO_CARTWHEELS))//no reason not to use else if, no point in setting it twice
+			allowCartwheels = qfalse;
 
 #ifdef _GAME
 		{

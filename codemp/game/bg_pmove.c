@@ -4323,10 +4323,6 @@ static void PM_GrappleMoveTribes(void) {
 
 
 
-
-
-
-
 	VectorCopy(bgEnt->s.pos.trDelta, enemyVel);
 	VectorNormalize(enemyVel);
 
