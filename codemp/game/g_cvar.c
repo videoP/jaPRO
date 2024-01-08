@@ -553,7 +553,6 @@ static void CVU_TribesClass(void) {
 	}
 }
 
-
 static void CVU_Registration(void) {
 	g_allowRegistration.integer ?
 		(jcinfo2.integer |= JAPRO_CINFO2_REGISTRATION) : (jcinfo2.integer &= ~JAPRO_CINFO2_REGISTRATION);
