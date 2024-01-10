@@ -2264,6 +2264,9 @@ int Pickup_Ammo (gentity_t *ent, gentity_t *other)
 					if (other->client->ps.fd.forcePower > 100)
 						other->client->ps.fd.forcePower = 100;
 				}
+
+				if (g_showHealth.integer)
+					G_ScaleNetHealth(other); //WT_TRIBES rework
 			}
 
 		}
@@ -2367,6 +2370,10 @@ int Pickup_Health (gentity_t *ent, gentity_t *other) {
 	}
 	other->client->ps.stats[STAT_HEALTH] = other->health;
 
+	if (g_showHealth.integer)
+		G_ScaleNetHealth(other); //WT_TRIBES rework
+
+
 	if ( ent->item->quantity == 100 ) {		// mega health respawns slow
 		return RESPAWN_MEGAHEALTH;
 	}
@@ -2383,6 +2390,9 @@ int Pickup_Armor( gentity_t *ent, gentity_t *other )
 	{
 		other->client->ps.stats[STAT_ARMOR] = other->client->ps.stats[STAT_MAX_HEALTH] * ent->item->giTag;
 	}
+
+	if (g_showHealth.integer)
+		G_ScaleNetHealth(other); //WT_TRIBES rework
 
 	return adjustRespawnTime(RESPAWN_ARMOR, ent->item->giType, ent->item->giTag);
 }
