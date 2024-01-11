@@ -1229,7 +1229,7 @@ ClientRespawn
 ================
 */
 void SiegeRespawn(gentity_t *ent);
-void ClientRespawn( gentity_t *ent ) {
+void ClientRespawn(gentity_t *ent) {
 
 	MaintainBodyQueue(ent);
 
@@ -1246,15 +1246,15 @@ void ClientRespawn( gentity_t *ent ) {
 		return;
 	}
 
-	trap->UnlinkEntity ((sharedEntity_t *)ent);
-
+	trap->UnlinkEntity((sharedEntity_t *)ent);
+	
 	if (level.gametype == GT_SIEGE)
 	{
 		if (g_siegeRespawn.integer)
 		{
 			if (ent->client->tempSpectate <= level.time)
 			{
-				int minDel = g_siegeRespawn.integer* 2000;
+				int minDel = g_siegeRespawn.integer * 2000;
 				if (minDel < 20000)
 				{
 					minDel = 20000;
@@ -1270,9 +1270,9 @@ void ClientRespawn( gentity_t *ent ) {
 				trap->LinkEntity((sharedEntity_t *)ent);
 
 				// Respawn time.
-				if ( ent->s.number < MAX_CLIENTS )
+				if (ent->s.number < MAX_CLIENTS)
 				{
-					gentity_t *te = G_TempEntity( ent->client->ps.origin, EV_SIEGESPEC );
+					gentity_t *te = G_TempEntity(ent->client->ps.origin, EV_SIEGESPEC);
 					te->s.time = g_siegeRespawnCheck;
 					te->s.owner = ent->s.number;
 				}
@@ -1281,6 +1281,22 @@ void ClientRespawn( gentity_t *ent ) {
 			}
 		}
 		SiegeRespawn(ent);
+	}
+	else if ((g_tweakWeapons.integer & WT_TRIBES) && (level.gametype >= GT_TEAM))
+	{
+		//Com_Printf("Diff is %i\n", ent->client->ps.last);
+		//if (ent->client->tempSpectate <= level.time - 3000) {
+
+			// Respawn time.
+			//if (ent->s.number < MAX_CLIENTS)
+			//{
+				//gentity_t *te = G_TempEntity(ent->client->ps.origin, EV_SIEGESPEC);
+				//te->s.time = g_siegeRespawnCheck;
+				//te->s.owner = ent->s.number;
+			//}
+
+			ClientSpawn(ent);
+		//}
 	}
 	else
 	{
@@ -3551,7 +3567,7 @@ void GiveClientItems(gclient_t *client) {
 			//Light
 			client->ps.stats[STAT_HOLDABLE_ITEMS] |= ((1 << HI_SENTRY_GUN) + (1 << HI_JETPACK));
 		}
-		if (client->pers.tribesClass == 2) {
+		else if (client->pers.tribesClass == 2) {
 			//Medium
 			client->ps.stats[STAT_HOLDABLE_ITEMS] |= ((1 << HI_JETPACK) + (1 << HI_EWEB));
 		}
