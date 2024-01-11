@@ -3883,6 +3883,10 @@ void WP_PlaceLaserTrap( gentity_t *ent, qboolean alt_fire )
 	int			lowestTimeStamp;
 	int			removeMe;
 	int			i;
+	int			maxTrips = 9;
+
+	if (g_tweakWeapons.integer & WT_TRIBES)
+		maxTrips = 2;
 
 	foundLaserTraps[0] = ENTITYNUM_NONE;
 
@@ -3905,7 +3909,7 @@ void WP_PlaceLaserTrap( gentity_t *ent, qboolean alt_fire )
 	found = NULL;
 	trapcount_org = trapcount;
 	lowestTimeStamp = level.time;
-	while ( trapcount > 9 )
+	while ( trapcount > maxTrips)
 	{
 		removeMe = -1;
 		for ( i = 0; i < trapcount_org; i++ )
