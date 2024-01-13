@@ -12,6 +12,8 @@
 typedef struct gentity_s gentity_t;
 typedef struct gclient_s gclient_t;
 
+#define VEH_CONTROL_SCHEME_4
+
 //npc stuff
 #include "b_public.h"
 
