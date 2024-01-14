@@ -5014,6 +5014,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker, vec3_
 	if ( attacker->client 
 		&& attacker != targ 
 		&& attacker->s.eType == ET_PLAYER 
+		&& !g_tribesMode.integer
 		&& level.gametype != GT_SIEGE ) 
 	{
 		max = attacker->client->ps.stats[STAT_MAX_HEALTH];
