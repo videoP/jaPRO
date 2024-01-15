@@ -2229,7 +2229,7 @@ void G_ValidateCosmetics(gclient_t *client, char *cosmeticString, size_t cosmeti
 
 
 void G_Kill(gentity_t *ent);
-void DetectTribesClass(gentity_t *ent, const char *model) {
+void DetectTribesClass(gentity_t *ent, char *model) {
 	//WT_TRIBES
 	if (!ent || !ent->client)
 		return;
@@ -2265,7 +2265,7 @@ void DetectTribesClass(gentity_t *ent, const char *model) {
 			}
 		}
 		else {
-			trap->SendServerCommand(ent - g_entities, va("print \"Spawning as non tribes class\n\""));
+			//trap->SendServerCommand(ent - g_entities, va("print \"Spawning as non tribes class\n\""));
 			ent->client->pers.tribesClass = 0;
 			if (ent->health > 0 && ent->client->sess.sessionTeam != TEAM_SPECTATOR)
 				G_Kill(ent);
