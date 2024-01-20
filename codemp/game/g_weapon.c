@@ -5214,7 +5214,6 @@ void Weapon_HookThink (gentity_t *ent)
 {
 	if (!ent || !ent->parent) {
 		Weapon_HookFree(ent);
-		Com_Printf("Clearing grapple hook?\n");
 		return;
 	}
 
