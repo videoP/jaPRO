@@ -796,7 +796,6 @@ void WP_DisruptorProjectileFire(gentity_t* ent, qboolean altFire)
 	missile = CreateMissileNew(muzzle, forward, vel * g_projectileVelocityScale.value, 10000, ent, altFire, qtrue, qtrue);
 
 	if (altFire) {
-		float boxSize = 0;
 		count = (level.time - ent->client->ps.weaponChargeTime) / 50.0f;
 
 		if (g_tweakWeapons.integer & WT_TRIBES)
@@ -2789,7 +2788,6 @@ void rocketThink( gentity_t *ent )
 		if (tr.entityNum >= MAX_CLIENTS)
 		{
 			int i;
-			float	  dist;
 			vec3_t	  angles;
 			trace_t		ptrace;
 			for (i = 0; i < level.numConnectedClients; i++) {
@@ -5478,7 +5476,6 @@ gentity_t *WP_FireVehicleWeapon( gentity_t *ent, vec3_t start, vec3_t dir, vehWe
 	else if ( vehWeapon->bIsProjectile )
 	{//projectile entity
 		vec3_t		mins, maxs;
-		vec3_t newDir;
 
 		VectorSet( maxs, vehWeapon->fWidth/2.0f,vehWeapon->fWidth/2.0f,vehWeapon->fHeight/2.0f );
 		VectorScale( maxs, -1, mins );
