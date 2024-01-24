@@ -691,6 +691,7 @@ void TossClientItems( gentity_t *self ) {
 LookAtKiller
 ==================
 */
+/*
 void LookAtKiller( gentity_t *self, gentity_t *inflictor, gentity_t *attacker ) {
 	vec3_t		dir;
 
@@ -705,6 +706,7 @@ void LookAtKiller( gentity_t *self, gentity_t *inflictor, gentity_t *attacker ) 
 
 	self->client->ps.stats[STAT_DEAD_YAW] = vectoyaw ( dir );
 }
+*/
 
 /*
 ==================
