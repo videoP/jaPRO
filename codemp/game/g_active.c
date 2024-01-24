@@ -3419,6 +3419,8 @@ qboolean CanFireGrapple( gentity_t *ent ) { // Adapt for new hold-to-use jetpack
 		return qfalse;	
 	if (ent->client->sess.movementStyle == MV_TRIBES && ent->client->ps.fd.forcePower < 25)
 		return qfalse;
+	if (ent->client->sess.movementStyle == MV_TRIBES && (g_tweakWeapons.integer & WT_TRIBES) && (ent->client->ps.fd.forcePowersActive & (1 << FP_ABSORB)))
+		return qfalse;
 	return qtrue;
 }
 
@@ -4300,7 +4302,7 @@ void ClientThink_real( gentity_t *ent ) {
 				client->ps.speed *= 0.78125f;
 			}
 			if (g_tweakWeapons.integer & WT_TRIBES && (ent->client->ps.fd.forcePowersActive&(1 << FP_ABSORB))) {
-				client->ps.speed *= 2.0f;
+				client->ps.speed *= 1.5f;
 			}
 		} //Tribesclass = 0 else?
 
@@ -4354,7 +4356,10 @@ void ClientThink_real( gentity_t *ent ) {
 					}
 					else if (g_tweakWeapons.integer & WT_TRIBES) {
 						if (client->ps.stats[STAT_DEAD_YAW]) {
-							client->ps.gravity = 100;
+							client->ps.gravity *= 0.25f;
+						}
+						if (ent->client->ps.fd.forcePowersActive&(1 << FP_ABSORB)) {
+							client->ps.gravity *= 1.5f;
 						}
 					}
 				}
