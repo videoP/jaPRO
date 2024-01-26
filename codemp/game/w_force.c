@@ -1678,6 +1678,7 @@ void ForceAbsorb( gentity_t *self )
 	{
 		WP_ForcePowerStop( self, FP_ABSORB );
 		if (g_tweakWeapons.integer & WT_TRIBES) {
+			self->client->ps.fd.forcePowerDebounce[FP_ABSORB] = level.time + 1000; //fix that?
 		}
 		return;
 	}
