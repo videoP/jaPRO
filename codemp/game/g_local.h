@@ -1276,13 +1276,13 @@ typedef struct waypointData_s {
 
 //japro
 typedef struct Warp_s {
-	char			name[24];
+	char			name[28];
 	int				x;
 	int				y;
 	int				z;
 	short			yaw;
 } Warp_t;
-Warp_t	warpList[64];
+Warp_t	warpList[72];
 //japro
 
 //japro
