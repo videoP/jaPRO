@@ -1174,6 +1174,7 @@ struct gclient_s {
 	int			lastInStartTrigger;
 	int			kothDebounce;
 	short		forcedFireMode;
+	int			specificWeaponTime[MAX_WEAPONS];
 	//int			numStakes;
 
 #if _GRAPPLE
