@@ -2486,11 +2486,16 @@ qboolean ClientUserinfoChanged( int clientNum ) { //I think anything treated as 
 			}
 			else
 			{				
-				trap->SendServerCommand( -1, va( "print \"%s"S_COLOR_WHITE" %s %s\n\"", oldname, G_GetStringEdString( "MP_SVGAME", "PLRENAME" ), client->pers.netname ) );
-				G_LogPrintf( "ClientRename: %i [%s] (%s) \"%s^7\" -> \"%s^7\"\n", clientNum, ent->client->sess.IP, ent->client->pers.guid, oldname, ent->client->pers.netname );
-				client->pers.netnameTime = level.time + 5000;
-				if (g_playerLog.integer && ent && ent->client && !(ent->r.svFlags & SVF_BOT))
-					G_AddPlayerLog(client->pers.netname, client->sess.IP, client->pers.guid);
+				if (g_forceLogin.integer > 2 && !(ent->r.svFlags & SVF_BOT) && !ent->client->pers.userName[0]) { //needs testing
+					trap->SendServerCommand(ent - g_entities, "print \"^1You must login to rename!\n\"");
+				}
+				else {
+					trap->SendServerCommand(-1, va("print \"%s"S_COLOR_WHITE" %s %s\n\"", oldname, G_GetStringEdString("MP_SVGAME", "PLRENAME"), client->pers.netname));
+					G_LogPrintf("ClientRename: %i [%s] (%s) \"%s^7\" -> \"%s^7\"\n", clientNum, ent->client->sess.IP, ent->client->pers.guid, oldname, ent->client->pers.netname);
+					client->pers.netnameTime = level.time + 5000;
+					if (g_playerLog.integer && ent && ent->client && !(ent->r.svFlags & SVF_BOT))
+						G_AddPlayerLog(client->pers.netname, client->sess.IP, client->pers.guid);
+				}
 			}
 		}
 	}
