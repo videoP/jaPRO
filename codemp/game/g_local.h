@@ -593,6 +593,7 @@ struct gentity_s {
 	int			awesomenoise_index;//japro
 	int			worldrecordnoise_index;//japro
 	int			courseID;
+	int			speakerEntity;
 
 	// timing variables
 	float		wait;
