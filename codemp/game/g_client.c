@@ -4009,7 +4009,7 @@ void ClientSpawn(gentity_t *ent) {
 		spawnPoint = SelectCTFSpawnPoint ( 
 						client->sess.sessionTeam, 
 						client->pers.teamState.state, 
-						spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
+						spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT), client);
 	}
 	else if (level.gametype == GT_SIEGE)
 	{
