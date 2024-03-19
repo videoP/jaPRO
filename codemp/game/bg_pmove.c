@@ -9331,7 +9331,7 @@ if (pm->ps->duelInProgress)
 		}
 	}
 	
-
+#if _GAME
 #if _SPECIFICWEAPONTIME
 	if ((g_tweakWeapons.integer & WT_TRIBES) && !pm->ps->stats[STAT_RACEMODE])
 	{
@@ -9343,7 +9343,8 @@ if (pm->ps->duelInProgress)
 		}
 	}
 	else
-#else
+#endif
+#endif
 	if (pm->ps->weaponTime > 0) {
 		//This is the saddest hack we have seen yet
 		if (pm->ps->stats[STAT_RACEMODE] && pm->ps->stats[STAT_MOVEMENTSTYLE] == MV_JETPACK && pm->ps->weapon == WP_DET_PACK && pm->ps->hasDetPackPlanted && /*!(pm->cmd.buttons & BUTTON_ATTACK) &&*/ pm->cmd.buttons & BUTTON_ALT_ATTACK) {
@@ -9352,7 +9353,6 @@ if (pm->ps->duelInProgress)
 			return;
 		}
 	}
-#endif
 
 	if (pm->ps->weapon == WP_DISRUPTOR &&
 		pm->ps->zoomMode == 1)
