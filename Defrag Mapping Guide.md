@@ -1,6 +1,6 @@
 **JKA Defrag Map Maker guide:**
 
-This guide will focus on making defrag maps for jaPRO mod.  I don't know of any other JKA mod that does defrag timers except for CTF fast-caps (timers based on ctf flag capture).
+This guide will focus on making defrag maps for jaPRO mod.  I don't know of any other JKA MP mod that does defrag timers except for CTF fast-caps (timers based on ctf flag capture).
 
 **Base concept:**
 A defrag course has a start and a finish.  Players spawn before the start line and their timer is started by crossing the start line.  Their timer is stopped when they hit the finish line and their time is recorded if it is a personal best.  Leaderboards exist to see how they compare to other players.  You can have many courses in one map.
