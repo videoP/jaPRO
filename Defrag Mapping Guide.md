@@ -8,43 +8,43 @@ A defrag course has a start and a finish.  Players spawn before the start line a
 **Movement styles:**
 Currently there are 19 different movement styles in jaPRO defrag.  A movement style is simply a different set of movement physics the player can choose to use.  Leaderboards are specific to a movement style.  The styles are:
 
-**1. siege**
+1. **siege**
 	This is the style used in siege mode of JKA.  There is no air acceleration.  Players typically use rolling, ramps, and wall-strafe to increase speed.
-**2. jka**
+2. **jka**
 	Default JKA style.
-**3. qw**
+3. **qw**
 	Inspired by quakeworld but with JKA force jump.  Players can make tighter turns while maintaining their speed.  It also has ramp jumps.  
-**4. cpm**
+4. **cpm**
 	Inspired by CPM from q3 defrag.  No forcejumps, faster basespeed (320), high air control, rampjumps, and double jumps.
-**5. q3**
+5. **q3**
 	Inspired by vanilla mode from q3 defrag.  Like CPM but without increased air control.
-**6. pjk**
+6. **pjk**
 	Like CPM but with force jump, and regular JKA basespeed.
-**7. wsw**
+7. **wsw**
 	Inspired by Warsow.  Like CPM but with a dash move and a walljump move, which lets you redirect your speed to any angle without speed loss.  Its version of ramp jump also does not reduce your horizontal speed at all.
-**8. rjq3**
+8. **rjq3**
 	Q3 with rocket launcher.  Players propel them selves with rocket knockback.  
-**9. rjcpm**
+9. **rjcpm**
 	RJQ3 with air control.
-**10. swoop**
+10. **swoop**
 	Riding a swoop bike.  It's modified to give you a grav boost option which lowers your gravity for a few seconds.
-**11. jetpack**
+11. **jetpack**
 	Jetpack but with different jetpack physics and spiderman style grapple hook that lets you properly swing.  It also has detpacks for self knockback boost.
-**12. speed**
+12. **speed**
 	JKA but with faster base speed (same as forcespeed).  It only gives you 50force which does not regen.
-**13. sp**
+13. **sp**
 	SP inspired physics (higher air accelerate and your speed is halved when you land unless the landing point is lower than your takeoff point).
-**14. slick**
+14. **slick**
 	All ground friction is removed and has super fast acceleration while on ground.  No forcejump.
-**15. botcpm**
+15. **botcpm**
 	Same as CPM but it has a button that makes your strafe angles perfect.
-**16. coop**
+16. **coop**
 	2 player mode.  JKA physics with weaopns that let you boost eachother.  
-**17. ocpm**
+17. **ocpm**
 	Version of CPM which tries to be mroe accurate to Q3 defrags version of CPM.  Specifically 125fps physics and velocity snapping.
-**18. tribes**
+18. **tribes**
 	Tries to mimic the skiing and jetpack style of movement from the tribes franchise.  Has a gun that you can self boost with, and a thrust pack that you can trade forcepoints for speed with.
-**19. surf**
+19. **surf**
 	Inspired by CS 1.6 physics.  Can be used for surf maps or bhop maps.
 
 Seaons:
