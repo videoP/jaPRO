@@ -1,11 +1,11 @@
-JKA Defrag Map Maker guide:
+**JKA Defrag Map Maker guide:**
 
 This guide will focus on making defrag maps for jaPRO mod.  I don't know of any other JKA mod that does defrag timers except for CTF fast-caps (timers based on ctf flag capture).
 
-Base concept:
+**Base concept:**
 A defrag course has a start and a finish.  Players spawn before the start line and their timer is started by crossing the start line.  Their timer is stopped when they hit the finish line and their time is recorded if it is a personal best.  Leaderboards exist to see how they compare to other players.  You can have many courses in one map.
 
-Movement styles:
+**Movement styles:**
 Currently there are 19 different movement styles in jaPRO defrag.  A movement style is simply a different set of movement physics the player can choose to use.  Leaderboards are specific to a movement style.  The styles are:
 
 1. siege
@@ -50,17 +50,22 @@ Currently there are 19 different movement styles in jaPRO defrag.  A movement st
 Seaons:
 Furthermore, leaderboards can be broken down per season.  The current seasons typically lasts 1 year, for example season 5 was 2023.  A global leaderboard still exists which ignores seasons.
 
-Mapping tips:
+**Mapping tips:**
 There are a few things to take into account when making a defrag map.  First is the start area.  You don't want players to be able to build up a huge amount of speed before hitting the start trigger, as this is typically seen as boring gameplay called "loop starting".  Areas before the start brush are typically very small and have a patchmesh infront of the start trigger so players cant re-trigger the start once they go past it.  There are other options (trigger_newpush) that let you dynamically cap a players speed in certain directions (to prevent "loop starting") while in the start.  
 Checkpoint triggers are popular to scatter throughout the course so players can gauge their speed throughout the run.
 Try to make use of noise, message, etc fields on the triggers.  If you have multiple courses, the message field on the finish trigger is mandatory and acts as the courses name.
 
-New/modified entities:
+**New/modified entities:**
 See here https://github.com/videoP/jaPRO/blob/master/scripts/japro_entities.def
 
-Examples:
+**Examples:**
 Challenge style map: https://www.youtube.com/watch?v=NqDdeNQkCjI
+
 Race map on built on an existing map: https://www.youtube.com/watch?v=m7W-88DdPKk
+
 Climb style map: https://www.youtube.com/watch?v=crhV1V4IndM
+
 Torture style map: https://www.youtube.com/watch?v=WlgNCN6MbtQ
+
 Montage: https://www.youtube.com/watch?v=sy3HdYTx0yE
+
