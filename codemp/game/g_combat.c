@@ -2324,7 +2324,6 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	G_BreakArm(self, 0); //unbreak anything we have broken
 	self->client->ps.saberEntityNum = self->client->saberStoredIndex; //in case we died while our saber was knocked away.
 
-	/* same frame fix 
 	if (self->client->ps.weapon == WP_SABER && self->client->saberKnockedTime)
 	{
 		gentity_t *saberEnt = &g_entities[self->client->ps.saberEntityNum];
@@ -2336,7 +2335,6 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 		saberEnt->nextthink = level.time;
 		G_RunObject(saberEnt);
 	}
-	*/
 
 	self->client->bodyGrabIndex = ENTITYNUM_NONE;
 	self->client->bodyGrabTime = 0;
