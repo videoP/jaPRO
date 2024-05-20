@@ -4256,7 +4256,7 @@ static void PM_CheckDash(void)
 	if (moveStyle != MV_WSW && moveStyle != MV_TRIBES) {
 		return;
 	}
-	
+
 	if (moveStyle == MV_TRIBES && (((pm->ps->velocity[0]*pm->ps->velocity[0] + pm->ps->velocity[1] *pm->ps->velocity[1]) > (pm->ps->speed * pm->ps->speed * 1.48f)) || (pm->ps->fd.forcePower < 25))) {
 		return;
 	}
