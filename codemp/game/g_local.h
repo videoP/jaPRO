@@ -1310,7 +1310,7 @@ Route_t	blueRouteList[6];
 //japro
 
 //japro
-#define MAX_COSMETIC_UNLOCKS 32
+#define MAX_COSMETIC_UNLOCKS 64
 typedef struct CosmeticUnlocks_s {
 	unsigned short	bitvalue;
 	char			mapname[40];
