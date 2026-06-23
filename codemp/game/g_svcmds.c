@@ -1604,6 +1604,7 @@ void SV_RebuildElo_f( void );
 #if 1//NEWRACERANKING
 void SV_RebuildRaceRanks_f( void );
 #endif
+void SV_MigrateCheckpoints_f(void);
 void SV_RebuildUnlocks_f(void);
 #if 0
 void G_TestAddRace( void );
@@ -1663,6 +1664,8 @@ svcmd_t svcmds[] = {
 	{ "listAdmins",					Svcmd_ListAdmins_f,					qfalse },
 
 	{ "listip",						Svcmd_ListIP_f,						qfalse },
+
+	{ "migrateCheckpoints",			SV_MigrateCheckpoints_f,			qfalse },
 
 	{ "pause",						SV_Pause_f,							qfalse },
 
