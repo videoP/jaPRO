@@ -1341,16 +1341,68 @@ void SV_RebuildRaceRanks_f(void) {
 
 }
 
+void SV_MigrateCheckpoints_f(void) {
+	char * sql;
+	sqlite3_stmt * stmt;
+	sqlite3 * db;
+	int s;
+	qboolean hasCheckpoints = qfalse;
+
+	CALL_SQLITE(open(LOCAL_DB_PATH, &db));
+
+	sql = "PRAGMA table_info(LocalRun)";
+	CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+	while (1) {
+		s = sqlite3_step(stmt);
+		if (s == SQLITE_ROW) {
+			const char *columnName = (const char *)sqlite3_column_text(stmt, 1);
+			if (columnName && !Q_stricmp(columnName, "checkpoints")) {
+				hasCheckpoints = qtrue;
+				break;
+			}
+		}
+		else if (s == SQLITE_DONE) {
+			break;
+		}
+		else {
+			G_ErrorPrint("ERROR: SQL Select Failed (SV_MigrateCheckpoints_f)", s);
+			break;
+		}
+	}
+	CALL_SQLITE(finalize(stmt));
+
+	if (hasCheckpoints) {
+		trap->Print("LocalRun.checkpoints already exists.\n");
+		CALL_SQLITE(close(db));
+		return;
+	}
+
+	sql = "ALTER TABLE LocalRun ADD COLUMN checkpoints TEXT";
+	CALL_SQLITE(prepare_v2(db, sql, strlen(sql) + 1, &stmt, NULL));
+	s = sqlite3_step(stmt);
+	if (s == SQLITE_DONE)
+		trap->Print("Added LocalRun.checkpoints column.\n");
+	else
+		G_ErrorPrint("ERROR: SQL Alter Failed (SV_MigrateCheckpoints_f)", s);
+	CALL_SQLITE(finalize(stmt));
+
+	CALL_SQLITE(close(db));
+}
+
 static QINLINE int G_GetSeason(void) {
 	return 6;
 }
 
-static void G_UpdateOurLocalRun(sqlite3 * db, int seasonOldRank_self, int seasonNewRank_self, int globalOldRank_self, int globalNewRank_self, int style_self, char *username_self, char *coursename_self, 
-	int duration_ms_self, int topspeed_self, int average_self, int end_time_self, int seasonCount, int globalCount) {
+static void G_UpdateOurLocalRun(sqlite3 * db, int seasonOldRank_self, int seasonNewRank_self, int globalOldRank_self, int globalNewRank_self, int style_self, char *username_self, char *coursename_self,
+	int duration_ms_self, int topspeed_self, int average_self, int end_time_self, int seasonCount, int globalCount, char *checkpoints_self) {
 	char * sql;
 	sqlite3_stmt * stmt;
 	int s;
 	const int season = G_GetSeason();
+	char emptyCheckpoints[1] = {0};
+
+	if (!checkpoints_self)
+		checkpoints_self = emptyCheckpoints;
 
 	//Get count
 	//Insert it +1 (including ourself)
@@ -1372,7 +1424,7 @@ static void G_UpdateOurLocalRun(sqlite3 * db, int seasonOldRank_self, int season
 	}
 
 	if (seasonOldRank_self == -1) { //First attempt of the season
-		sql = "INSERT INTO LocalRun (username, coursename, duration_ms, topspeed, average, style, season, end_time, rank, entries, season_rank, season_entries, last_update, invalid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
+		sql = "INSERT INTO LocalRun (username, coursename, duration_ms, topspeed, average, style, season, end_time, rank, entries, season_rank, season_entries, last_update, invalid, checkpoints) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)";
 		CALL_SQLITE (prepare_v2 (db, sql, strlen (sql) + 1, & stmt, NULL));
 		CALL_SQLITE (bind_text (stmt, 1, username_self, -1, SQLITE_STATIC));
 		CALL_SQLITE (bind_text (stmt, 2, coursename_self, -1, SQLITE_STATIC));
@@ -1387,6 +1439,7 @@ static void G_UpdateOurLocalRun(sqlite3 * db, int seasonOldRank_self, int season
 		CALL_SQLITE (bind_int (stmt, 11, seasonNewRank_self));
 		CALL_SQLITE (bind_int (stmt, 12, seasonCount));
 		CALL_SQLITE (bind_int (stmt, 13, end_time_self));
+		CALL_SQLITE (bind_text (stmt, 14, checkpoints_self, -1, SQLITE_STATIC));
 		s = sqlite3_step(stmt);
 		if (s != SQLITE_DONE) {
 			char string[1024] = {0};
@@ -1399,7 +1452,7 @@ static void G_UpdateOurLocalRun(sqlite3 * db, int seasonOldRank_self, int season
 		CALL_SQLITE (finalize(stmt));
 	}
 	else {
-		sql = "UPDATE LocalRun SET duration_ms = ?, topspeed = ?, average = ?, end_time = ?, rank = ?, season_rank = ?, last_update = ?, invalid = 0 WHERE username = ? AND coursename = ? AND style = ? AND season = ?";
+		sql = "UPDATE LocalRun SET duration_ms = ?, topspeed = ?, average = ?, end_time = ?, rank = ?, season_rank = ?, last_update = ?, invalid = 0, checkpoints = ? WHERE username = ? AND coursename = ? AND style = ? AND season = ?";
 		CALL_SQLITE (prepare_v2 (db, sql, strlen (sql) + 1, & stmt, NULL));
 		CALL_SQLITE (bind_int (stmt, 1, duration_ms_self));
 		CALL_SQLITE (bind_int (stmt, 2, topspeed_self));
@@ -1408,10 +1461,11 @@ static void G_UpdateOurLocalRun(sqlite3 * db, int seasonOldRank_self, int season
 		CALL_SQLITE (bind_int (stmt, 5, globalNewRank_self));
 		CALL_SQLITE (bind_int (stmt, 6, seasonNewRank_self));
 		CALL_SQLITE (bind_int (stmt, 7, end_time_self));
-		CALL_SQLITE (bind_text (stmt, 8, username_self, -1, SQLITE_STATIC));
-		CALL_SQLITE (bind_text (stmt, 9, coursename_self, -1, SQLITE_STATIC));
-		CALL_SQLITE (bind_int (stmt, 10, style_self));
-		CALL_SQLITE (bind_int (stmt, 11, season));
+		CALL_SQLITE (bind_text (stmt, 8, checkpoints_self, -1, SQLITE_STATIC));
+		CALL_SQLITE (bind_text (stmt, 9, username_self, -1, SQLITE_STATIC));
+		CALL_SQLITE (bind_text (stmt, 10, coursename_self, -1, SQLITE_STATIC));
+		CALL_SQLITE (bind_int (stmt, 11, style_self));
+		CALL_SQLITE (bind_int (stmt, 12, season));
 		s = sqlite3_step(stmt);
 		if (s != SQLITE_DONE) {
 			char string[1024] = {0};
@@ -1807,7 +1861,7 @@ void SV_RebuildUnlocks_f(void) {
 }
 
 void StripWhitespace(char *s);
-void G_AddRaceTime(char *username, char *message, int duration_ms, int style, int topspeed, int average, int clientNum, int awesomenoise, int worldrecordnoise) {//should be short.. but have to change elsewhere? is it worth it?
+void G_AddRaceTime(char *username, char *message, int duration_ms, int style, int topspeed, int average, int clientNum, int awesomenoise, int worldrecordnoise, char *checkpoints) {//should be short.. but have to change elsewhere? is it worth it?
 	time_t	rawtime;
 	char	string[1024] = {0}, info[1024] = {0}, coursename[40], timeStr[32] = {0}, styleString[32] = {0};
 	char	runtimePrintMessage[MAX_QPATH] = {0};
@@ -2057,7 +2111,7 @@ void G_AddRaceTime(char *username, char *message, int duration_ms, int style, in
 				G_UpdateOtherLocalRun(db, season_newRank, season_oldRank, global_newRank, global_oldRank, style, coursename, rawtime); //Update other spots in race list
 			}
 		}
-		G_UpdateOurLocalRun(db, season_oldRank, season_newRank, global_oldRank, global_newRank, style, username, coursename, duration_ms, topspeed, average, rawtime, season_newCount, global_newCount);//Update our race list
+		G_UpdateOurLocalRun(db, season_oldRank, season_newRank, global_oldRank, global_newRank, style, username, coursename, duration_ms, topspeed, average, rawtime, season_newCount, global_newCount, checkpoints);//Update our race list
 
 		if (cl->pers.recordingDemo && globalPB) {
 			char mapCourse[MAX_QPATH] = { 0 };
