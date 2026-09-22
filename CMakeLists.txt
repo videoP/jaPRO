@@ -19,7 +19,7 @@
 # The <min>...<policy_max> syntax is needed to remain compatible with 3.1, but also newer versions that dropped 3.1 compatibility
 # More info here: https://cmake.org/cmake/help/latest/command/cmake_minimum_required.html
 cmake_minimum_required(VERSION 3.1...3.31)
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.11" CACHE STRING "Minimum OS X deployment version")
 
 set(InOpenJK ON)
 
@@ -73,9 +73,12 @@ if(UseInternalLibs OR WIN32 OR APPLE)
     set(UseInternalJPEGDefault   ON)
     set(UseInternalSDL2Default   ON)
   else()
-    set(UseInternalJPEGDefault ON)
-    set(UseInternalPNGDefault  ON)
     set(UseInternalZlibDefault ON)
+    set(UseInternalPNGDefault  ON)
+    set(UseInternalJPEGDefault ON)
+    if(APPLE)
+        set(UseInternalSDL2Default ON)
+    endif()
   endif()
 endif()
 
@@ -89,6 +92,10 @@ if(UseInternalJPEG)
 	set(UseTurboJPEGDefault   	 OFF)
 	option(UseTurboJPEG "If set, use libjpeg-turbo." ${UseTurboJPEGDefault})
 endif()
+
+cmake_dependent_option(UseInternalPNGNeon
+		"Build the bundled libpng with arm64 NEON optimisations" OFF
+		"UseInternalPNG" OFF)
 
 # This option won't appear on non-Apple platforms.
 if(APPLE)
@@ -130,7 +137,6 @@ else()
 	set(X86 OFF)
 	if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
 		set(Architecture "arm64")
-		add_definitions(-DPNG_ARM_NEON_OPT=0)
 	elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
 		set(Architecture "arm")
 	elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^i.86$")
@@ -154,6 +160,11 @@ else()
 endif()
 
 message(STATUS "Architecture is ${Architecture}")
+
+if(APPLE AND Architecture STREQUAL "arm64" AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "11.0")
+	set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum OS X deployment version" FORCE)
+	message(STATUS "arm64 macOS: raising deployment target to ${CMAKE_OSX_DEPLOYMENT_TARGET}")
+endif()
 
 if(WIN32 AND CMAKE_VERSION VERSION_LESS "3.4")
 	message(WARNING "Building on Windows platform with CMake version less than 3.4 is deprecated. Manifest file will fail to be included.")
@@ -234,6 +245,27 @@ if(MSVC)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
 	endif()
 
+	if(UseAddressSanitizer)
+		# MSVC ASan is incompatible with runtime checks, Edit and Continue,
+		# and incremental linking. RelWithDebInfo already provides /Zi.
+		foreach(flag_variable CMAKE_C_FLAGS_DEBUG CMAKE_CXX_FLAGS_DEBUG)
+			string(REPLACE "/RTC1" "" ${flag_variable} "${${flag_variable}}")
+			string(REPLACE "/RTCs" "" ${flag_variable} "${${flag_variable}}")
+			string(REPLACE "/RTCu" "" ${flag_variable} "${${flag_variable}}")
+			string(REPLACE "/ZI" "/Zi" ${flag_variable} "${${flag_variable}}")
+		endforeach()
+		add_compile_options(/fsanitize=address)
+		add_link_options(/INCREMENTAL:NO)
+
+		# The bundled Discord RPC library is prebuilt without MSVC's ASan
+		# annotations for std::string and std::vector. Linking it into an
+		# annotated binary fails with LNK2038, so omit it from diagnostic builds.
+		if(BuildDiscordRichPresence)
+			message(STATUS "MSVC ASan: disabling incompatible prebuilt Discord RPC library")
+			set(BuildDiscordRichPresence OFF)
+		endif()
+	endif()
+
 	# Configure MSVC Runtime
 	include(MSVCRuntime)
 	if(NOT DEFINED MSVC_RUNTIME)
@@ -259,9 +291,12 @@ elseif (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_C_COMPILER_ID}" M
 	set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
 	if(UseAddressSanitizer)
-		# also raise stack size drastically (to 64MiB), since the sanitizer adds overhead to stack frames
-		add_compile_options(-fsanitize=address)
-		add_link_options(-fsanitize=address -z stack-size=4000000)
+		add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+		add_link_options(-fsanitize=address)
+		if(NOT APPLE)
+			# raise stack size to 64MiB, since the sanitizer adds overhead to stack frames
+			add_link_options(-z stack-size=0x4000000)
+		endif()
 	endif()
 	if(UseUndefinedSanitizer)
 		add_compile_options(-fsanitize=undefined)
@@ -440,30 +475,52 @@ if(BuildMPRdVanilla OR BuildMPRdVulkan OR BuildMPRend2)
 	if(UseInternalJPEG)
 		if(UseTurboJPEG)
 			include(ExternalProject)
-			find_program(CMAKE_ASM_NASM_COMPILER NAMES nasm)
-			if(CMAKE_ASM_NASM_COMPILER)
-				message(STATUS "Found NASM assembler: ${CMAKE_ASM_NASM_COMPILER}")
-				set(WITH_SIMD 1)
+
+			set(TurboSimdArgs "")
+			set(TurboNeedsNasm OFF)
+			if(X86)
+				set(TurboNeedsNasm ON)
+			elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64|i386")
+				# universal build: the x86_64 slice needs NASM even on an arm64 host
+				set(TurboNeedsNasm ON)
+			endif()
+
+			if(TurboNeedsNasm)
+				find_program(TaystJKNasmExecutable NAMES nasm)
+				if(TaystJKNasmExecutable)
+					message(STATUS "Found NASM assembler: ${TaystJKNasmExecutable}")
+					list(APPEND TurboSimdArgs
+							-DWITH_SIMD=1
+							-DCMAKE_ASM_NASM_COMPILER=${TaystJKNasmExecutable})
+				else()
+					message(WARNING "NASM assembler not found - libjpeg-turbo will be built without SIMD optimizations")
+					list(APPEND TurboSimdArgs -DWITH_SIMD=0)
+				endif()
+			elseif(Architecture STREQUAL "arm64" OR Architecture STREQUAL "arm")
+				list(APPEND TurboSimdArgs -DWITH_SIMD=1)
 			else()
-				message(WARNING "NASM assembler not found - libjpeg-turbo will be built without SIMD optimizations")
-				set(WITH_SIMD 0)
+				list(APPEND TurboSimdArgs -DWITH_SIMD=0)
 			endif()
 
 			ExternalProject_Add(libjpeg-turbo
 					GIT_REPOSITORY https://github.com/libjpeg-turbo/libjpeg-turbo.git
 					GIT_TAG 3.1.4.1
-					BUILD_COMMAND ${CMAKE_COMMAND} --build . --target jpeg-static --config ${CMAKE_BUILD_TYPE}
+					BUILD_COMMAND ${CMAKE_COMMAND} --build . --target jpeg-static --config $<CONFIG>
 					INSTALL_COMMAND ""
+					BUILD_BYPRODUCTS <BINARY_DIR>/${CMAKE_STATIC_LIBRARY_PREFIX}jpeg${CMAKE_STATIC_LIBRARY_SUFFIX}
 					CMAKE_ARGS
-					-DCMAKE_ASM_NASM_COMPILER=${CMAKE_ASM_NASM_COMPILER}
-					-DWITH_SIMD=${WITH_SIMD}
+					${TurboSimdArgs}
 					-DENABLE_SHARED=0
 					-DWITH_ARITH_DEC=0
 					-DWITH_ARITH_ENC=0
 					-DWITH_TURBOJPEG=0
 					-DWITH_TOOLS=0
 					-DWITH_TESTS=0
-					-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+					-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+					-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+					-DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+					-DCMAKE_OSX_SYSROOT=${CMAKE_OSX_SYSROOT}
+					"-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}")
 		else()
 			add_subdirectory(lib/jpeg-9c)
 		endif()
@@ -473,6 +530,9 @@ if(BuildMPRdVanilla OR BuildMPRdVulkan OR BuildMPRend2)
 
 	if(UseInternalPNG)
 	  add_subdirectory(lib/libpng)
+	  if(Architecture STREQUAL "arm64" AND NOT UseInternalPNGNeon)
+		  target_compile_definitions(bundled_libpng PRIVATE PNG_ARM_NEON_OPT=0)
+	  endif()
 	else()
 	  find_package(PNG REQUIRED)
 	endif()

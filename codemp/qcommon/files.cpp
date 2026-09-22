@@ -4214,6 +4214,13 @@ const char *FS_ReferencedPakChecksums( void ) {
 	return info;
 }
 
+static qboolean fs_baseJKAPureBypass = qfalse;
+
+void FS_SetBaseJKAPureBypass( qboolean enabled )
+{
+	fs_baseJKAPureBypass = enabled;
+}
+
 /*
 =====================
 FS_ReferencedPakPureChecksums
@@ -4228,25 +4235,26 @@ const char *FS_ReferencedPakPureChecksums( void ) {
 	static char	info[BIG_INFO_STRING];
 	searchpath_t	*search;
 	int nFlags, numPaks, checksum, lastPack, refPacks;
-
+	const qboolean bypass = fs_baseJKAPureBypass;
 	info[0] = 0;
 
 	checksum = fs_checksumFeed;
 	numPaks = 0;
 
+	if (bypass) {
+		if (Cvar_VariableIntegerValue("protocolswitch") != 2) {
+			lastPack = -1342311474; //assets3.pk3
+			refPacks = 7;
+		} else {
+			lastPack = -1239421272; //assets2.pk3
+			refPacks = 6;
+		}
 
-	if (Cvar_VariableIntegerValue("protocolswitch") != 2) {
-		lastPack = -1342311474; //assets3.pk3
-		refPacks = 7;
-	} else {
-		lastPack = -1239421272; //assets2.pk3
-		refPacks = 6;
-	}
-
-	for (search = fs_searchpaths; search; search = search->next) {
-		if (search->pack && search->pack->checksum == lastPack) {
-			search->pack->referenced = refPacks;
-			break;
+		for (search = fs_searchpaths; search; search = search->next) {
+			if (search->pack && search->pack->checksum == lastPack) {
+				search->pack->referenced = refPacks;
+				break;
+			}
 		}
 	}
 
@@ -4259,6 +4267,9 @@ const char *FS_ReferencedPakPureChecksums( void ) {
 			info[strlen(info)] = '@';
 			info[strlen(info)] = ' ';
 		}
+		if (!bypass) {
+			search = fs_searchpaths;
+		}
 		while(search) {
 			// is the element a pak file and has it been referenced based on flag?
 			if ( search->pack && (search->pack->referenced & nFlags)) {
@@ -4269,7 +4280,7 @@ const char *FS_ReferencedPakPureChecksums( void ) {
 				}
 				checksum ^= search->pack->pure_checksum;
 				numPaks++;
-				if (search->pack && search->pack->checksum == 1767559464) {
+				if (search->pack && search->pack->checksum == 1767559464 && bypass) {
 					break;
 				}
 			}

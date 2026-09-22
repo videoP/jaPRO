@@ -432,6 +432,9 @@ void CL_SystemInfoChanged( void ) {
 	char			key[BIG_INFO_KEY];
 	char			value[BIG_INFO_VALUE];
 	qboolean		gameSet;
+	char			*svinfo = NULL;
+	char			*gamename = NULL;
+	qboolean		baseJKA = qfalse;
 
 	systemInfo = cl.gameState.stringData + cl.gameState.stringOffsets[ CS_SYSTEMINFO ];
 	// NOTE TTimo:
@@ -453,9 +456,19 @@ void CL_SystemInfoChanged( void ) {
 	}
 
 	// check pure server string
-	//s = Info_ValueForKey( systemInfo, "sv_paks" );
-	//t = Info_ValueForKey( systemInfo, "sv_pakNames" );
-	//FS_PureServerSetLoadedPaks( s, t );
+	svinfo = cl.gameState.stringData + cl.gameState.stringOffsets[ CS_SERVERINFO ];
+	if ( svinfo ) {
+		gamename = Info_ValueForKey(svinfo, "gamename");
+		if ( gamename ) {
+			baseJKA = Q_stricmp( gamename, "basejka" ) ? qfalse : qtrue;
+		}
+	}
+	FS_SetBaseJKAPureBypass(baseJKA);
+	if (!baseJKA) {
+		s = Info_ValueForKey( systemInfo, "sv_paks" );
+		t = Info_ValueForKey( systemInfo, "sv_pakNames" );
+		FS_PureServerSetLoadedPaks( s, t );
+	}
 
 	s = Info_ValueForKey( systemInfo, "sv_referencedPaks" );
 	t = Info_ValueForKey( systemInfo, "sv_referencedPakNames" );

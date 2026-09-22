@@ -23,7 +23,7 @@ on:
 
 jobs:
   msvc:
-    name: Windows ${{ matrix.arch }} ${{ matrix.build_type }} (${{ matrix.portable }})
+    name: Windows ${{ matrix.arch }} ${{ matrix.build_type }} (${{ matrix.portable }}${{ matrix.sanitizer == 'AddressSanitizer' && ', AddressSanitizer' || '' }})
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -31,11 +31,17 @@ jobs:
         arch: [x86, x86_64]
         build_type: [Debug, Release]
         portable: [Portable]
+        sanitizer: [None]
         include:
           - arch: x86
             platform: Win32
           - arch: x86_64
             platform: x64
+          - arch: x86_64
+            platform: x64
+            build_type: RelWithDebInfo
+            portable: Portable
+            sanitizer: AddressSanitizer
 
     steps:
       - uses: actions/checkout@85e6279cec87321a52edac9c87bce653a07cf6c2 # v4.2.2
@@ -91,6 +97,9 @@ jobs:
           else
             OPTIONS+=" -DBuildPortableVersion=OFF -DUseTurboJPEG=ON "
           fi
+          if [ "${{ matrix.sanitizer }}" == "AddressSanitizer" ]; then
+            OPTIONS+=" -DUseAddressSanitizer=ON"
+          fi
           cmake $GITHUB_WORKSPACE -A ${{ matrix.platform }} $OPTIONS
 
       - name: Build
@@ -99,23 +108,51 @@ jobs:
         run: cmake --build . --config ${{ matrix.build_type }} -j $NUMBER_OF_PROCESSORS
 
       - name: Install
-        if: ${{ matrix.build_type == 'Release' }}
+        if: ${{ matrix.build_type == 'Release' || matrix.sanitizer == 'AddressSanitizer' }}
         working-directory: ${{ github.workspace }}/build
         shell: bash
         run: cmake --install . --config ${{ matrix.build_type }}
 
+      - name: Add AddressSanitizer runtime and debug symbols
+        if: ${{ matrix.sanitizer == 'AddressSanitizer' }}
+        shell: pwsh
+        run: |
+          $buildDir = "${{ github.workspace }}\build"
+          $installDir = "$buildDir\bin\JediAcademy"
+
+          $pdbFiles = @(Get-ChildItem -Path $buildDir -Filter *.pdb -File -Recurse |
+            Where-Object { $_.FullName -like "*\${{ matrix.build_type }}\*" })
+          if ($pdbFiles.Count -eq 0) {
+            throw "No ${{ matrix.build_type }} PDB files were produced"
+          }
+          $pdbFiles | Copy-Item -Destination $installDir -Force
+
+          $vsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsPath = & $vsWhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.ASAN -property installationPath
+          if (-not $vsPath) {
+            throw "Visual Studio installation with AddressSanitizer support not found"
+          }
+
+          $toolVersion = (Get-Content "$vsPath\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt").Trim()
+          $asanRuntime = "$vsPath\VC\Tools\MSVC\$toolVersion\bin\Hostx64\x64\clang_rt.asan_dynamic-x86_64.dll"
+          if (-not (Test-Path $asanRuntime)) {
+            throw "MSVC AddressSanitizer runtime DLL not found at $asanRuntime"
+          }
+          Copy-Item $asanRuntime -Destination $installDir -Force
+          Copy-Item "${{ github.workspace }}\scripts\asan\Run-TaystJK-ASan.bat" -Destination $installDir -Force
+
       - name: Create Archive
-        if: ${{ matrix.build_type == 'Release' }}
+        if: ${{ matrix.build_type == 'Release' || matrix.sanitizer == 'AddressSanitizer' }}
         working-directory: ${{ github.workspace }}/build/bin/JediAcademy
         shell: bash
         run: |
-          7z a -r TaystJK-windows-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}.zip *
+          7z a -r TaystJK-windows-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}${{ matrix.sanitizer == 'AddressSanitizer' && '-AddressSanitizer' || '' }}.zip *
 
       - uses: actions/upload-artifact@6027e3dd177782cd8ab9af838c04fd81a07f1d47 # v4.6.2
-        if: ${{ matrix.build_type == 'Release' }}
+        if: ${{ matrix.build_type == 'Release' || matrix.sanitizer == 'AddressSanitizer' }}
         with:
-          name: TaystJK-windows-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}
-          path: ${{ github.workspace }}/build/bin/JediAcademy/TaystJK-windows-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}.zip
+          name: TaystJK-windows-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}${{ matrix.sanitizer == 'AddressSanitizer' && '-AddressSanitizer' || '' }}
+          path: ${{ github.workspace }}/build/bin/JediAcademy/TaystJK-windows-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}${{ matrix.sanitizer == 'AddressSanitizer' && '-AddressSanitizer' || '' }}.zip
           if-no-files-found: error
 
   ubuntu:
@@ -141,6 +178,9 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+
+      - name: Setup NASM
+        uses: ilammy/setup-nasm@72793074d3c8cdda771dba85f6deafe00623038b
 
       - name: Create Build Environment
         run: |
@@ -231,9 +271,9 @@ jobs:
         run: |
           OPTIONS="-DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install"
           if [ "${{ matrix.portable }}" == "Portable" ]; then
-            OPTIONS+=" -DBuildPortableVersion=ON"
+            OPTIONS+=" -DBuildPortableVersion=ON -DUseTurboJPEG=ON"
           else
-            OPTIONS+=" -DBuildPortableVersion=OFF"
+            OPTIONS+=" -DBuildPortableVersion=OFF -DUseTurboJPEG=ON"
           fi
           cmake $GITHUB_WORKSPACE $OPTIONS
 
@@ -301,9 +341,9 @@ jobs:
         run: |
           OPTIONS="-DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install"
           if [ "${{ matrix.portable }}" == "Portable" ]; then
-            OPTIONS+=" -DBuildPortableVersion=ON"
+            OPTIONS+=" -DBuildPortableVersion=ON -DUseTurboJPEG=ON"
           else
-            OPTIONS+=" -DBuildPortableVersion=OFF"
+            OPTIONS+=" -DBuildPortableVersion=OFF -DUseTurboJPEG=ON"
           fi
           cmake $GITHUB_WORKSPACE $OPTIONS
 
@@ -382,9 +422,9 @@ jobs:
             x86_64-extracted/taystjkded.x86_64 \
             arm64-extracted/taystjkded.arm64
 
-          lipo -create -output universal2-app/JediAcademy/taystjk.app/Contents/Frameworks/libSDL2-2.0.0.dylib \
+          cp -v \
             x86_64-extracted/taystjk.x86_64.app/Contents/Frameworks/libSDL2-2.0.0.dylib \
-            arm64-extracted/taystjk.arm64.app/Contents/Frameworks/libSDL2-2.0.0.dylib
+            universal2-app/JediAcademy/taystjk.app/Contents/Frameworks/
 
           cp -v x86_64-extracted/taystjk.x86_64.app/Contents/MacOS/rd-*_x86_64.dylib universal2-app/JediAcademy/taystjk.app/Contents/MacOS/
           cp -v arm64-extracted/taystjk.arm64.app/Contents/MacOS/rd-*_arm64.dylib universal2-app/JediAcademy/taystjk.app/Contents/MacOS/
@@ -488,7 +528,7 @@ jobs:
             if [ -d "$artifact_dir" ]; then
               for file in "$artifact_dir"/*; do
                 if [ -f "$file" ]; then
-                  filename=$(basename "$file" | sed -e 's/-Release-Non-Portable//' -e 's/-Release-Portable//')
+                  filename=$(basename "$file" | sed -e 's/-Release-Non-Portable//' -e 's/-Release-Portable//' -e 's/-RelWithDebInfo-Portable//')
                   cp "$file" "$filename"
                   RELEASE_FILES="$RELEASE_FILES $filename"
                 fi
@@ -530,7 +570,7 @@ jobs:
             if [ -d "$artifact_dir" ]; then
               for file in "$artifact_dir"/*; do
                 if [ -f "$file" ]; then
-                  filename=$(basename "$file" | sed -e 's/-Release-Non-Portable//' -e 's/-Release-Portable//')
+                  filename=$(basename "$file" | sed -e 's/-Release-Non-Portable//' -e 's/-Release-Portable//' -e 's/-RelWithDebInfo-Portable//')
                   cp "$file" "$filename"
                   RELEASE_FILES="$RELEASE_FILES $filename"
                 fi
@@ -570,7 +610,7 @@ jobs:
             if [ -d "$artifact_dir" ]; then
               for file in "$artifact_dir"/*; do
                 if [ -f "$file" ]; then
-                  filename=$(basename "$file" | sed -e 's/-Release-Non-Portable//' -e 's/-Release-Portable//')
+                  filename=$(basename "$file" | sed -e 's/-Release-Non-Portable//' -e 's/-Release-Portable//' -e 's/-RelWithDebInfo-Portable//')
                   gh release upload "${{ github.event.release.tag_name }}" \
                     "$file" \
                     --clobber \

@@ -3364,7 +3364,7 @@ static qboolean CollapseStagesToGLSL(void)
 		{
 			shaderStage_t *pStage = &stages[i];
 			shaderStage_t *diffuse, *lightmap;
-			qboolean tcgen, diffuselit, vertexlit; //,parallax
+			qboolean tcgen, diffuselit, vertexlit;
 
 			if (!pStage->active)
 				continue;
@@ -3413,7 +3413,6 @@ static qboolean CollapseStagesToGLSL(void)
 			}
 
 			diffuse  = pStage;
-			//parallax = qfalse;
 			lightmap = NULL;
 			vertexlit = qfalse;
 
@@ -3527,6 +3526,52 @@ static qboolean CollapseStagesToGLSL(void)
 
 	if (skip)
 	{
+		// In rend2 diffuse and lightmaps are already swapped to
+		// find the diffuse earlier and lightstyle stages are
+		// correctly added after the first lightmap.
+		// Move diffuse after the lightmap stages now.
+		if (stages[1].active &&
+			stages[1].bundle[0].isLightmap &&
+			(stages[1].stateBits & (GLS_DEPTHFUNC_BITS)) != GLS_DEPTHFUNC_EQUAL &&
+			stages[0].active &&
+			shader.numDeforms != 1)
+		{
+			int blendBits = stages[1].stateBits & (GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS);
+
+			if (blendBits == (GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO)
+				|| blendBits == (GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR))
+			{
+				for (i = 1; i < MAX_SHADER_STAGES; i++)
+				{
+					if (!stages[i+1].active)
+						break;
+
+					if (stages[i+1].bundle[0].tcGen < TCGEN_LIGHTMAP1 ||
+						stages[i+1].bundle[0].tcGen > TCGEN_LIGHTMAP3 ||
+						stages[i+1].rgbGen != CGEN_LIGHTMAPSTYLE)
+					{
+						break;
+					}
+				}
+
+				int stateBits0 = stages[0].stateBits;
+				int stateBits1 = stages[1].stateBits;
+				shaderStage_t swapStage;
+
+				swapStage = stages[0];
+
+				for (j = 1; j <= i; j++)
+				{
+					stages[j-1] = stages[j];
+				}
+
+				stages[i] = swapStage;
+
+				stages[0].stateBits = stateBits0;
+				stages[i].stateBits = stateBits1;
+			}
+		}
+
 		// set default specular scale for skipped shaders that will use metalness workflow by default
 		for (i = 0; i < MAX_SHADER_STAGES; i++)
 		{
@@ -3556,35 +3601,8 @@ static qboolean CollapseStagesToGLSL(void)
 		numStages++;
 	}
 
-	// convert any remaining lightmap stages to a lighting pass with a white texture
-	// only do this with r_sunlightMode non-zero, as it's only for correct shadows.
-	if (r_sunlightMode->integer && shader.numDeforms != 1)
-	{
-		for (i = 0; i < MAX_SHADER_STAGES; i++)
-		{
-			shaderStage_t *pStage = &stages[i];
-
-			if (!pStage->active)
-				continue;
-
-			if (pStage->adjustColorsForFog)
-				continue;
-
-			if (pStage->bundle[TB_DIFFUSEMAP].tcGen >= TCGEN_LIGHTMAP
-				&& pStage->bundle[TB_DIFFUSEMAP].tcGen <= TCGEN_LIGHTMAP3
-				&& pStage->rgbGen != CGEN_LIGHTMAPSTYLE) //don't convert lightstyled lightmap stages
-			{
-				pStage->glslShaderGroup = tr.lightallShader;
-				pStage->glslShaderIndex = LIGHTDEF_USE_LIGHTMAP;
-				pStage->bundle[TB_LIGHTMAP] = pStage->bundle[TB_DIFFUSEMAP];
-				pStage->bundle[TB_DIFFUSEMAP].image[0] = tr.whiteImage;
-				pStage->bundle[TB_DIFFUSEMAP].isLightmap = qfalse;
-				pStage->bundle[TB_DIFFUSEMAP].tcGen = TCGEN_TEXTURE;
-			}
-		}
-	}
-
-	// convert any remaining lightingdiffuse stages to a lighting pass
+	// convert any remaining lightmap, lightingdiffuse and vert lit stages to a lighting pass
+	// always do this, so dynamic lights work properly
 	if (shader.numDeforms != 1)
 	{
 		for (i = 0; i < MAX_SHADER_STAGES; i++)
@@ -3597,6 +3615,35 @@ static qboolean CollapseStagesToGLSL(void)
 			if (pStage->adjustColorsForFog)
 				continue;
 
+			switch(pStage->alphaGen)
+			{
+				case AGEN_PORTAL:
+				case AGEN_LIGHTING_SPECULAR:
+					continue;
+				default:
+					break;
+			}
+
+			if (pStage->bundle[TB_DIFFUSEMAP].tcGen >= TCGEN_LIGHTMAP
+				&& pStage->bundle[TB_DIFFUSEMAP].tcGen <= TCGEN_LIGHTMAP3
+				&& pStage->rgbGen != CGEN_LIGHTMAPSTYLE) //don't convert lightstyled lightmap stages
+			{
+				pStage->glslShaderGroup = tr.lightallShader;
+				pStage->glslShaderIndex = LIGHTDEF_USE_LIGHTMAP;
+				pStage->bundle[TB_LIGHTMAP] = pStage->bundle[TB_DIFFUSEMAP];
+				pStage->bundle[TB_DIFFUSEMAP].image[0] = tr.whiteImage;
+				pStage->bundle[TB_DIFFUSEMAP].isLightmap = qfalse;
+				pStage->bundle[TB_DIFFUSEMAP].tcGen = TCGEN_TEXTURE;
+			}
+			else if (pStage->rgbGen == CGEN_VERTEX_LIT
+				|| pStage->rgbGen == CGEN_EXACT_VERTEX_LIT
+				|| pStage->rgbGen == CGEN_VERTEX
+				|| pStage->rgbGen == CGEN_EXACT_VERTEX)
+			{
+				pStage->glslShaderGroup = tr.lightallShader;
+				pStage->glslShaderIndex = LIGHTDEF_USE_LIGHT_VERTEX;
+			}
+			
 			if (pStage->rgbGen == CGEN_LIGHTING_DIFFUSE ||
 				pStage->rgbGen == CGEN_LIGHTING_DIFFUSE_ENTITY)
 			{
