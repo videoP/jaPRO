@@ -795,6 +795,7 @@ typedef struct {//JAPRO - Serverside - Stats
 	int courseID;
 	int checkpointCount;
 	char checkpointTimes[MAX_RUN_CHECKPOINT_STRING];
+	int pluginsAtStart; // cp_pluginDisable snapshot at timer start
 } stats_t;
 
 // State captured by "amtelemark exact" (practice mode only) and put back by amtele / the race tele key
@@ -1630,6 +1631,7 @@ void Cmd_SaberAttackCycle_f(gentity_t *ent);
 int G_ItemUsable(playerState_t *ps, int forcedUse);
 void Cmd_ToggleSaber_f(gentity_t *ent);
 void Cmd_EngageDuel_f(gentity_t *ent, int dueltype);
+void ResetPlayerTimers(gentity_t *ent, qboolean print);
 
 //
 // g_items.c
