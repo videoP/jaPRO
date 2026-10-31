@@ -72,6 +72,8 @@ cvar_t		*cm_noAreas;
 cvar_t		*cm_noCurves;
 cvar_t		*cm_playerCurveClip;
 cvar_t		*cm_extraVerbose;
+static cvar_t *cm_flatContactValidation = NULL;
+static cvar_t *cm_flatContactDebug = NULL;
 #endif
 
 cmodel_t	box_model;
@@ -81,6 +83,10 @@ cbrush_t	*box_brush;
 
 
 void	CM_InitBoxHull (void);
+#ifndef BSPC
+static void CM_PrepareCollapsedFlatFaces(void);
+static void CM_ClearCollapsedFlatFaces(void);
+#endif
 void	CM_FloodAreaConnections (clipMap_t &cm);
 
 //rwwRMG - added:
@@ -857,6 +863,8 @@ static void CM_LoadMap_Actual( const char *name, qboolean clientload, int *check
 	cm_noCurves = Cvar_Get ("cm_noCurves", "0", CVAR_CHEAT);
 	cm_playerCurveClip = Cvar_Get ("cm_playerCurveClip", "1", CVAR_ARCHIVE_ND|CVAR_CHEAT );
 	cm_extraVerbose = Cvar_Get ("cm_extraVerbose", "0", CVAR_TEMP );
+	cm_flatContactValidation = Cvar_Get("cm_flatContactValidation", "0", CVAR_ARCHIVE);
+	cm_flatContactDebug = Cvar_Get("cm_flatContactDebug", "0", CVAR_TEMP);
 #endif
 	Com_DPrintf( "CM_LoadMap( %s, %i )\n", name, clientload );
 
@@ -1135,8 +1143,202 @@ static void CM_LoadMap_Actual( const char *name, qboolean clientload, int *check
 	if ( !clientload ) {
 		Q_strncpyz( cm.name, origName, sizeof( cm.name ) );
 	}
+#ifndef BSPC
+	if (&cm == &cmg) CM_PrepareCollapsedFlatFaces();
+#endif
 }
 
+
+
+#ifndef BSPC
+// Reconstructed bounds of numerically collapsed, upward horizontal faces.  This
+// table is indexed by original BSP brush-side, not by a replacement brush.
+// It never changes brush membership, plane distances, or point-contents.
+struct cmCollapsedFace_t {
+    bool eligible;
+    float minX, maxX, minY, maxY;
+    int brushIndex;
+};
+// Kept for the life of the loaded BSP, like the brush/brushside arrays.
+static cmCollapsedFace_t *cmCollapsedFaces = NULL;
+static int cmCollapsedFaceCount = 0;
+static unsigned int cmFaceRejectCount = 0;
+
+// Not a gameplay "thin platform" threshold: only consider a footprint collapsed
+// to roughly two single-precision coordinate steps. This scales with the BSP
+// coordinate magnitude and is capped at 0.004 game units for safety.
+// q_shared.h already includes <math.h> and <float.h>.  Keep finite checks
+// explicit so this collision code does not need C++ std:: math headers.
+static bool CM_FaceIsFinite(double value) {
+    return value >= -DBL_MAX && value <= DBL_MAX;
+}
+
+static double CM_FaceFloatUncertainty(double lo, double hi) {
+    const double absLo = fabs(lo);
+    const double absHi = fabs(hi);
+    const float magnitude = float(absLo > absHi ? absLo : absHi);
+    if (!CM_FaceIsFinite(magnitude)) return 0.0;
+    // Move toward the largest finite float.  For any finite value below
+    // FLT_MAX this is the same next float as moving toward +infinity.
+    // FLT_MAX itself yields ulp == 0 and is rejected below, as before.
+    const float next = nextafterf(magnitude, FLT_MAX);
+    const double ulp = double(next) - magnitude;
+    if (!(ulp > 0.0) || !CM_FaceIsFinite(ulp)) return 0.0;
+    const double uncertainty = 2.0 * ulp;
+    return uncertainty < 0.004 ? uncertainty : 0.004;
+}
+
+static void CM_ClearCollapsedFlatFaces(void) {
+    // Allocated with Hunk_Alloc, and freed when the map hunk is cleared.
+    cmCollapsedFaces = NULL;
+    cmCollapsedFaceCount = 0;
+    cmFaceRejectCount = 0;
+}
+
+static void CM_PrepareCollapsedFlatFaces(void) {
+    CM_ClearCollapsedFlatFaces();
+    if (!cmg.numBrushSides || !cmg.brushsides || !cmg.numBrushes || !cmg.brushes)
+        return;
+    cmCollapsedFaces = (cmCollapsedFace_t *)Hunk_Alloc(
+        cmg.numBrushSides * sizeof(*cmCollapsedFaces), h_high);
+    cmCollapsedFaceCount = cmg.numBrushSides;
+    Com_Memset(cmCollapsedFaces, 0, cmCollapsedFaceCount * sizeof(*cmCollapsedFaces));
+    // Temporary during map loading only; no per-frame allocations.
+    byte *inlineBrush = (byte *)Z_Malloc(cmg.numBrushes, TAG_TEMP_WORKSPACE);
+    Com_Memset(inlineBrush, 0, cmg.numBrushes);
+    // Never change collision for doors, platforms or other inline BSP models.
+    for (int model = 1; model < cmg.numSubModels; ++model) {
+        const cLeaf_t &leaf = cmg.cmodels[model].leaf;
+        for (int i=0; i<leaf.numLeafBrushes; ++i) {
+            const int id = cmg.leafbrushes[leaf.firstLeafBrush+i];
+            if (id >= 0 && id < cmg.numBrushes) inlineBrush[id] = 1;
+        }
+    }
+    int candidates = 0, collapsed = 0;
+    for (int bi = 0; bi < cmg.numBrushes; ++bi) {
+        const cbrush_t &b = cmg.brushes[bi];
+        if (inlineBrush[bi] || !(b.contents & CONTENTS_SOLID) || b.numsides < 7)
+            continue;
+        for (int face = 0; face < b.numsides; ++face) {
+            const cbrushside_t &s = b.sides[face];
+            const cplane_t &p = *s.plane;
+            // STRICTLY upward horizontal planes. No sloped, wall or ceiling planes.
+            // Keep the original BSP volume/planes regardless of eligibility.
+            if (p.normal[0] != 0.0f || p.normal[1] != 0.0f || p.normal[2] != 1.0f)
+                continue;
+            ++candidates;
+            // Enumerate vertices of the finite face from the pairwise
+            // intersections of other planes with this horizontal plane.
+            const double z = p.dist;
+            double minX=1e30, maxX=-1e30, minY=1e30, maxY=-1e30;
+            int vertices = 0;
+            for (int j=0; j<b.numsides; ++j) {
+                if (j == face) continue;
+                const cplane_t &a = *b.sides[j].plane;
+                for (int k=j+1; k<b.numsides; ++k) {
+                    if (k == face) continue;
+                    const cplane_t &c = *b.sides[k].plane;
+                    const double det = double(a.normal[0])*c.normal[1] - double(a.normal[1])*c.normal[0];
+                    if (fabs(det) < 1e-10) continue;
+                    const double da = double(a.dist)-double(a.normal[2])*z;
+                    const double dc = double(c.dist)-double(c.normal[2])*z;
+                    const double x = (da*c.normal[1]-dc*a.normal[1])/det;
+                    const double y = (a.normal[0]*dc-c.normal[0]*da)/det;
+                    if (!CM_FaceIsFinite(x) || !CM_FaceIsFinite(y)) continue;
+                    bool inside = true;
+                    for (int n=0; n<b.numsides; ++n) {
+                        if (n == face) continue;
+                        const cplane_t &other = *b.sides[n].plane;
+                        if (double(other.normal[0])*x + double(other.normal[1])*y +
+                            double(other.normal[2])*z - other.dist > 0.002) {
+                            inside = false; break;
+                        }
+                    }
+                    if (!inside) continue;
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                    ++vertices;
+                }
+            }
+            // No reconstructed vertices is NOT proof of an invalid face.
+            // A small-but-real thin platform must remain legitimate. Only
+            // classify a face whose width collapses to float precision.
+            if (vertices < 2 || !(maxX >= minX) || !(maxY >= minY))
+                continue;
+            const double tolX = CM_FaceFloatUncertainty(minX, maxX);
+            const double tolY = CM_FaceFloatUncertainty(minY, maxY);
+            if ((maxX-minX > tolX) && (maxY-minY > tolY))
+                continue;
+            // CMod_LoadBrushes assigned b.sides from this BSP's brushside
+            // array, so native pointer subtraction is valid here.
+            const ptrdiff_t sideIndex = (b.sides - cmg.brushsides) + face;
+            if (sideIndex < 0 || sideIndex >= cmCollapsedFaceCount) continue;
+            cmCollapsedFace_t &record = cmCollapsedFaces[sideIndex];
+            record.eligible = true;
+            record.minX = float(minX); record.maxX = float(maxX);
+            record.minY = float(minY); record.maxY = float(maxY);
+            record.brushIndex = bi;
+            ++collapsed;
+            if (collapsed <= 12 && cm_flatContactDebug && cm_flatContactDebug->integer)
+                Com_Printf("[CM FLAT] collapsed brush=%d face=%d x=[%.6f,%.6f] y=[%.6f,%.6f]\n",
+                    bi,face,record.minX,record.maxX,record.minY,record.maxY);
+        }
+    }
+    Z_Free(inlineBrush);
+    Com_Printf("[CM FLAT] map=%s upward_faces=%d collapsed_faces=%d; cm_flatContactValidation 0=vanilla 1=validate flat contacts\n",
+        cmg.name,candidates,collapsed);
+}
+
+qboolean CM_RejectInvalidFlatContact(const traceWork_s *tw,
+    const cbrush_t *brush, const cbrushside_t *side, float fraction) {
+    if (!cm_flatContactValidation || cm_flatContactValidation->integer != 1 ||
+        !tw || !brush || !side || tw->sphere.use || tw->isPoint ||
+        tw->end[2] >= tw->start[2] ||
+        // Only strictly vertical downward traces: never veto a diagonal
+        // wall/slide movement collision against the same BSP brush.
+        tw->end[0] != tw->start[0] || tw->end[1] != tw->start[1] ||
+        !cmCollapsedFaces)
+        return qfalse;
+    // A world side is from cmg.brushsides, but inline/box/SubBSP sides
+    // can come from other arrays. Validate the address before indexing.
+    const size_t base = reinterpret_cast<size_t>(cmg.brushsides);
+    const size_t address = reinterpret_cast<size_t>(side);
+    if (address < base ||
+        address-base >= size_t(cmCollapsedFaceCount)*sizeof(cbrushside_t) ||
+        (address-base) % sizeof(cbrushside_t) != 0) return qfalse;
+    const size_t sideIndex = (address-base)/sizeof(cbrushside_t);
+    if (side != &cmg.brushsides[sideIndex]) return qfalse;
+    const cmCollapsedFace_t &face = cmCollapsedFaces[sideIndex];
+    if (!face.eligible) return qfalse;
+    // Reject only contact without ANY horizontal overlap with the finite
+    // flat face. The trace is vertical, so this never affects wall sweeps.
+    // The player's full-sized bbox is used; no arbitrary inset.
+    // The early exit guarantees a strictly vertical trace, so start and
+    // end have identical X/Y. Use those once instead of min/max pairs.
+    const double left = double(tw->start[0])+tw->size[0][0];
+    const double right = double(tw->start[0])+tw->size[1][0];
+    const double front = double(tw->start[1])+tw->size[0][1];
+    const double back = double(tw->start[1])+tw->size[1][1];
+    const double tolerance = 0.002; // numerical uncertainty, NOT the 0.125 collision epsilon
+    const bool disjoint =
+        (left > double(face.maxX)+tolerance) ||
+        (right < double(face.minX)-tolerance) ||
+        (front > double(face.maxY)+tolerance) ||
+        (back < double(face.minY)-tolerance);
+    if (!disjoint) return qfalse;
+    ++cmFaceRejectCount;
+    if (cm_flatContactDebug && cm_flatContactDebug->integer &&
+        (cmFaceRejectCount <= 48 || (cmFaceRejectCount % 256) == 0)) {
+        Com_Printf("[CM FLAT REJECT] brush=%d n=%u start=(%.5f %.5f %.5f) end=(%.5f %.5f %.5f) fraction=%.5f faceX=[%.5f,%.5f] faceY=[%.5f,%.5f]\n",
+            face.brushIndex,cmFaceRejectCount,tw->start[0],tw->start[1],tw->start[2],
+            tw->end[0],tw->end[1],tw->end[2],fraction,
+            face.minX,face.maxX,face.minY,face.maxY);
+    }
+    return qtrue;
+}
+#endif // !BSPC
 
 // need a wrapper function around this because of multiple returns, need to ensure bool is correct...
 //
@@ -1160,6 +1362,9 @@ void CM_ClearMap( void )
 {
 	int		i;
 
+#ifndef BSPC
+    CM_ClearCollapsedFlatFaces();
+#endif
 	Com_Memset( &cmg, 0, sizeof( cmg ) );
 	CM_ClearLevelPatches();
 

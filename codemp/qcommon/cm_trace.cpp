@@ -601,6 +601,13 @@ void CM_TraceThroughBrush( traceWork_t *tw, trace_t &trace, clipMap_t *local, cb
 
 	if (tw->enterFrac < tw->leaveFrac)
 	{
+		// Never remove planes or expand a brush. Only veto a demonstrably
+		// non-overlapping contact with an exceptionally thin upward face.
+#ifndef BSPC
+		if (tw->leadside && tw->enterFrac >= 0.0f &&
+			CM_RejectInvalidFlatContact(tw, brush, tw->leadside, tw->enterFrac))
+			return;
+#endif
 		if ((tw->enterFrac > -1.0f) && (tw->enterFrac < trace.fraction))
 		{
 			if (tw->enterFrac < 0.0f)

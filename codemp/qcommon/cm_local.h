@@ -154,6 +154,10 @@ typedef struct clipMap_s {
 #define	SURFACE_CLIP_EPSILON	(0.125)
 
 extern	clipMap_t	cmg; //rwwRMG - changed from cm
+// Experimental degenerate horizontal-face contact validation (world only).
+// Original brush planes and solid volumes remain unchanged.
+qboolean CM_RejectInvalidFlatContact(const struct traceWork_s *tw,
+    const cbrush_t *brush, const cbrushside_t *side, float fraction);
 extern	clipMap_t	SubBSP[MAX_SUB_BSP];
 extern	int			NumSubBSP;
 extern	int			TotalSubModels;
