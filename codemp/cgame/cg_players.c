@@ -14271,6 +14271,10 @@ stillDoSaber:
 		&& (cent->currentState.eType == ET_PLAYER)
 		&& (cg.snap->ps.clientNum != cent->currentState.number)
 		&& !(cent->currentState.eFlags & EF_DEAD)
+		// Honor the server's SpecHUD team restrictions before tracing or drawing.
+		&& !(ci->team == TEAM_FREE && (cgs.restricts & RESTRICT_SPECHUD_FREE))
+		&& !(ci->team == TEAM_RED && (cgs.restricts & RESTRICT_SPECHUD_RED))
+		&& !(ci->team == TEAM_BLUE && (cgs.restricts & RESTRICT_SPECHUD_BLUE))
 		&& (cent->currentState.bolt1 != 2)) //Dont do for racers
 	{
 		trace_t trace;

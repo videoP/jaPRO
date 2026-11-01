@@ -126,6 +126,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define RESTRICT_STRAFETRAIL		(1<<8)	//force plugin for racers
 #define RESTRICT_DO					(1<<9)	//force plugin for racers
 #define RESTRICT_ANGLE				(1<<10)	//force plugin for racers
+#define RESTRICT_SPECHUD_FREE		(1<<11)	//dont allow spechud to show free team
+#define RESTRICT_SPECHUD_RED		(1<<12)	//dont allow spechud to show red team players
+#define RESTRICT_SPECHUD_BLUE		(1<<13)	//dont allow spechud to show blue team players
 
 //Style playermodel stuff
 #define JAPRO_STYLE_FULLBRIGHT			(1<<0)
