@@ -51,6 +51,9 @@ typedef struct
 	vec3_t		previous_origin;
 	vec3_t		previous_velocity;
 	int			previous_waterlevel;
+	float forceJumpSlopeTarget;
+	float forceJumpSlopeContactFraction;
+	qboolean forceJumpSlopeContactKnown;
 
 	qboolean	clipped;
 } pml_t;

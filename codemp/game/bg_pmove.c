@@ -3783,6 +3783,8 @@ static qboolean PM_CheckJump( void )
 						pm->ps->velocity[2] = (forceJumpHeight[pm->ps->fd.forcePowerLevel[FP_LEVITATION]]-curHeight)/forceJumpHeight[pm->ps->fd.forcePowerLevel[FP_LEVITATION]]*forceJumpStrength[pm->ps->fd.forcePowerLevel[FP_LEVITATION]];//JUMP_VELOCITY;
 						pm->ps->velocity[2] /= 10;
 						pm->ps->velocity[2] += JUMP_VELOCITY;
+						/* The client and server must use this same race-only correction. */
+						if (IsRacemode(pm->ps)) pml.forceJumpSlopeTarget = pm->ps->velocity[2];
 					}
 					pm->ps->pm_flags |= PMF_JUMP_HELD;
 				}
