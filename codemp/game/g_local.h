@@ -1526,6 +1526,7 @@ typedef struct level_locals_s {
 	//rwwRMG - added:
 	int			mNumBSPInstances;
 	int			mBSPInstanceDepth;
+	qboolean	mBSPInstanceIsRuntime;	// child entities belong to an isolated runtime map
 	vec3_t		mOriginAdjust;
 	float		mRotationAdjust;
 	char		*mTargetAdjust;

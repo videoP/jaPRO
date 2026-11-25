@@ -998,7 +998,7 @@ void G_SpawnGEntityFromSpawnVars( qboolean inSubBSP ) {
 		}
 		return;
 	}
-	if ( inSubBSP && G_SpawnClassAddsGlobalWorldEffect( value ) ) {
+	if ( inSubBSP && level.mBSPInstanceIsRuntime && G_SpawnClassAddsGlobalWorldEffect( value ) ) {
 		if ( g_debugBSPInstances.integer ) {
 			trap->Print( va( "BSPDEBUG game skipped runtime BSP global world effect '%s'\n", value ) );
 		}
@@ -1040,7 +1040,7 @@ void G_SpawnGEntityFromSpawnVars( qboolean inSubBSP ) {
 		G_ParseField( level.spawnVars[i][0], level.spawnVars[i][1], ent );
 	}
 
-	if ( inSubBSP ) {
+	if ( inSubBSP && level.mBSPInstanceIsRuntime ) {
 		G_SetRuntimeBSPInstance( ent, level.mNumBSPInstances );
 	}
 

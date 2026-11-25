@@ -889,6 +889,7 @@ static gentity_t *G_SetupBSPInstance( gentity_t *ent, const char *bspModel, cons
 	float	savedRotationAdjust;
 	char	*savedTargetAdjust;
 	char	savedTeamFilter[MAX_QPATH];
+	qboolean savedBSPInstanceIsRuntime;
 
 	if ( !bspModel || !bspModel[0] )
 	{
@@ -932,15 +933,27 @@ static gentity_t *G_SetupBSPInstance( gentity_t *ent, const char *bspModel, cons
 	}
 
 	level.mNumBSPInstances++;
-	runtimeBSPInstance = level.mNumBSPInstances;
+	// Authored misc_bsps are part of the parent world, not isolated maps.
+	runtimeBSPInstance = networkSubEntities ? level.mNumBSPInstances : -1;
 	G_SetRuntimeBSPInstance( ent, runtimeBSPInstance );
 	Com_sprintf(temp, MAX_QPATH, "%d-", level.mNumBSPInstances);
 	VectorCopy(level.mOriginAdjust, savedOriginAdjust);
 	savedRotationAdjust = level.mRotationAdjust;
 	savedTargetAdjust = level.mTargetAdjust;
 	Q_strncpyz(savedTeamFilter, level.mTeamFilter, sizeof(savedTeamFilter));
-	VectorClear(level.mOriginAdjust);
-	level.mRotationAdjust = 0.0f;
+	savedBSPInstanceIsRuntime = level.mBSPInstanceIsRuntime;
+	level.mBSPInstanceIsRuntime = networkSubEntities;
+	if ( networkSubEntities )
+	{
+		// Runtime map clients use the BSP's local coordinate system.
+		VectorClear(level.mOriginAdjust);
+		level.mRotationAdjust = 0.0f;
+	}
+	else
+	{
+		VectorCopy(ent->s.origin, level.mOriginAdjust);
+		level.mRotationAdjust = ent->s.angles[1];
+	}
 	level.mTargetAdjust = temp;
 	level.mBSPInstanceDepth++;
 
@@ -979,7 +992,10 @@ static gentity_t *G_SetupBSPInstance( gentity_t *ent, const char *bspModel, cons
 	oldNumEntities = level.num_entities;
 	phaseStartTime = trap->Milliseconds();
 	G_SpawnEntitiesFromString(qtrue);
-	G_SpawnMapBoxFixes( bspModel, runtimeBSPInstance );
+	if ( networkSubEntities )
+	{
+		G_SpawnMapBoxFixes( bspModel, runtimeBSPInstance );
+	}
 	if ( g_debugBSPInstances.integer )
 	{
 		trap->Print( va( "BSPTIME game setup SpawnEntities map='%s' ent=%i oldEntities=%i newEntities=%i added=%i ms=%i total=%i\n",
@@ -1045,6 +1061,7 @@ static gentity_t *G_SetupBSPInstance( gentity_t *ent, const char *bspModel, cons
 	level.mRotationAdjust = savedRotationAdjust;
 	level.mTargetAdjust = savedTargetAdjust;
 	Q_strncpyz(level.mTeamFilter, savedTeamFilter, sizeof(level.mTeamFilter));
+	level.mBSPInstanceIsRuntime = savedBSPInstanceIsRuntime;
 
 	if ( g_debugBSPInstances.integer )
 	{
@@ -1358,6 +1375,10 @@ void SP_misc_bsp(gentity_t *ent)
 	int		tempint;
 
 	G_SpawnFloat( "angle", "0", &newAngle );
+	if ( newAngle == 0.0f )
+	{
+		newAngle = ent->s.angles[1];
+	}
 	G_SpawnString("bspmodel", "", &out);
 	G_SpawnString("teamfilter", "", &teamFilter);
 
